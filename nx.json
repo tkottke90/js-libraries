@@ -53,7 +53,6 @@
   },
   "release": {
     "projectsRelationship": "independent",
-
     "version": {
       "preVersionCommand": "npx nx run-many -t lint build",
       "updateDependents": "never",
@@ -64,11 +63,9 @@
         "tag": true
       }
     },
-
     "releaseTag": {
       "pattern": "{projectName}/v{version}"
     },
-
     "changelog": {
       "projectChangelogs": true
     }
