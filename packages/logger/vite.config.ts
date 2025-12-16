@@ -17,8 +17,10 @@ export default defineConfig(() => ({
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
-      reportsDirectory: './test-output/vitest/coverage',
-      provider: 'v8' as const,
+      reportsDirectory: './coverage',
+      provider: 'istanbul' as const,
+      reporter: ['html', 'lcov', 'json', 'text'],
+      exclude: ['node_modules/', 'dist', '**/*.spec.ts', '**/*.test.ts']
     },
   },
 }));
