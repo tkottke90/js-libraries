@@ -1,0 +1,33 @@
+name: 'Setup Node.js for CI/CD'
+description: 'Sets up Node.js with caching and private registry support for CI/CD workflows'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: 'lts/*'
+  registry-url:
+    description: 'Private NPM registry URL'
+    required: false
+    default: ''
+  node-auth-token:
+    description: 'Authentication token for private NPM registry'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        registry-url: ${{ inputs.registry-url }}
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        npm ci
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.node-auth-token }}

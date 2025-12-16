@@ -1,4 +1,4 @@
-name: CI
+name: CICD Pipeline
 
 on:
   push:
@@ -26,14 +26,13 @@ jobs:
       # - run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="build"
 
       # Cache node_modules
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js and install dependencies
+        uses: ./actions/setup-node-cicd
         with:
-          node-version: 20
-          cache: 'npm'
+          registry-url: ${{ secrets.PRIVATE_NPM_REGISTRY }}
+          node-auth-token: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
 
-      - run: npm ci
 
-      # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
-      # - run: npx nx-cloud record -- echo Hello World
-      - run: npx nx run-many -t lint test build typecheck
+      - name: Validate Changes
+        run: npx nx run-many -t lint test build typecheck
 

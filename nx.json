@@ -1,5 +1,5 @@
 {
-  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "$schema": "https://raw.githubusercontent.com/nrwl/nx/master/packages/nx/schemas/nx-schema.json",
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
@@ -11,7 +11,6 @@
     ],
     "sharedGlobals": ["{workspaceRoot}/.github/workflows/ci.yml"]
   },
-  "nxCloudId": "694174d840688e36b06a04aa",
   "plugins": [
     {
       "plugin": "@nx/js/typescript",
@@ -50,6 +49,28 @@
     },
     "test": {
       "dependsOn": ["^build"]
+    }
+  },
+  "release": {
+    "projectsRelationship": "independent",
+
+    "version": {
+      "preVersionCommand": "npx nx run-many -t lint build",
+      "updateDependents": "never",
+      "git": {
+        "commitMessage": "chore(release): publish new version of {projectName} v{version}",
+        "commit": true,
+        "push": true,
+        "tag": true
+      }
+    },
+
+    "releaseTag": {
+      "pattern": "{projectName}/v{version}"
+    },
+
+    "changelog": {
+      "projectChangelogs": true
     }
   }
 }

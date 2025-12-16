@@ -1,0 +1,26 @@
+name: 'Extract Changelog'
+description: 'Extracts the changelog for the current version'
+
+inputs:
+  package-path:
+    description: 'Which package should the changelog be grabbed from'
+    required: true
+
+outputs:
+  changelog-text:
+    description: 'The changelog for the current version'
+    value: ${{ steps.extract.outputs.changelog-text }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Extract changelog from script
+      id: extract
+      uses: actions/github-script@v8
+      env:
+        PACKAGE_PATH: ${{ inputs.package-path }}/CHANGELOG.md
+      with:
+        script: |
+          const script = require('./extract-changelog.js')
+          const changelog = script({github, context})
+          core.setOutput('changelog-text', changelog)

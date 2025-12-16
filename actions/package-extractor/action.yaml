@@ -1,0 +1,42 @@
+name: 'Extract Package Info from Git Tag'
+description: 'Parses a git tag in the format {projectName}/v{version} and extracts package name and version'
+
+inputs:
+  git-tag:
+    description: 'Git tag to parse (e.g., logger/v1.0.0)'
+    required: true
+
+outputs:
+  package-name:
+    description: 'Extracted package name'
+    value: ${{ steps.extract.outputs.package-name }}
+  package-version:
+    description: 'Extracted package version'
+    value: ${{ steps.extract.outputs.package-version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Extract package info from git tag
+      id: extract
+      shell: bash
+      run: |
+        TAG="${{ inputs.git-tag }}"
+
+        # Parse tag in format: {projectName}/v{version}
+        # Example: logger/v1.0.0
+        if [[ $TAG =~ ^([^/]+)/v(.+)$ ]]; then
+          PACKAGE_NAME="${BASH_REMATCH[1]}"
+          PACKAGE_VERSION="${BASH_REMATCH[2]}"
+
+          echo "package-name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "package-version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
+          echo "✓ Parsed git tag: $TAG"
+          echo "  Package Name: $PACKAGE_NAME"
+          echo "  Package Version: $PACKAGE_VERSION"
+        else
+          echo "✗ Failed to parse git tag: $TAG"
+          echo "  Expected format: {projectName}/v{version} (e.g., logger/v1.0.0)"
+          exit 1
+        fi
