@@ -1,3 +1,13 @@
+## 0.6.0 (2025-12-17)
+
+### 🩹 Fixes
+
+- **js-errors:** failing toString tests ([f8cafe6](https://github.com/tkottke90/js-libraries/commit/f8cafe6))
+
+### ❤️ Thank You
+
+- Thomas Kottke @tkottke90
+
 ## 0.5.0 (2025-12-17)
 
 This was a version bump only for @tkottke90/js-errors to align it with other projects, there were no code changes.
