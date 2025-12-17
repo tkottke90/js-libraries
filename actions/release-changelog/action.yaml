@@ -21,6 +21,6 @@ runs:
         PACKAGE_PATH: ${{ inputs.package-path }}/CHANGELOG.md
       with:
         script: |
-          const script = require('./extract-changelog.js')
+          const script = require('./actions/release-changelog/extract-changelog.js')
           const changelog = script({github, context})
           core.setOutput('changelog-text', changelog)

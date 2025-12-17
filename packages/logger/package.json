@@ -1,7 +1,6 @@
 {
   "name": "@tkottke90/logger",
   "version": "0.2.0",
-  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
