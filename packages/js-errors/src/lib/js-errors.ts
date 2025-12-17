@@ -1,7 +1,4 @@
-
-
 export class BaseError extends Error {
-
   override name = 'BaseError';
 
   constructor(message: string, public metadata: Record<string, unknown> = {}) {
@@ -9,23 +6,24 @@ export class BaseError extends Error {
   }
 
   override toString() {
-    const metadataStr = Array.from(Object.entries(this.metadata)).map(([key, value]) => {
-      return `${key}:${value}`
-    }).join(' ');
+    const metadataStr = Array.from(Object.entries(this.metadata))
+      .map(([key, value]) => {
+        return `${key}:${value}`;
+      })
+      .join(' ');
 
     return `${this.name} (message: ${this.message}) ${metadataStr}`;
   }
 
   toJSON(): Record<string, any> {
-    return ({
+    return {
       ...this.metadata,
       name: this.name,
       message: this.message,
       stack: this.stack ?? '',
-      cause: this.cause ?? 'Unknown Cause'
-    })
+      cause: this.cause ?? 'Unknown Cause',
+    };
   }
-
 
   /**
    * Catch values in Javascript/Typescript are typed as `unknown`. This
@@ -35,7 +33,6 @@ export class BaseError extends Error {
    * @returns new BaseError instance
    */
   static fromCatch(error: any) {
-  
     if (error instanceof BaseError) {
       return error;
     }
@@ -44,16 +41,16 @@ export class BaseError extends Error {
     const message = 'message' in error ? error.message : JSON.stringify(error);
 
     // Create metadata from the error properties
-    const metadata = Array.from(Object.entries(error)).reduce((output, [key, value]) => {
-      return ({
-        ...output,
-        [key]: value
-      })
-    }, {});
+    const metadata = Array.from(Object.entries(error)).reduce(
+      (output, [key, value]) => {
+        return {
+          ...output,
+          [key]: value,
+        };
+      },
+      {}
+    );
 
-    return new BaseError(
-      message,
-      metadata
-    )
+    return new BaseError(message, metadata);
   }
 }

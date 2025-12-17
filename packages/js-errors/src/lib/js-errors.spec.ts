@@ -53,7 +53,11 @@ describe('BaseError', () => {
     });
 
     it('should handle multiple metadata entries', () => {
-      const metadata = { code: 'ERR_001', severity: 'high', timestamp: '2024-01-01' };
+      const metadata = {
+        code: 'ERR_001',
+        severity: 'high',
+        timestamp: '2024-01-01',
+      };
       const error = new BaseError('Error occurred', metadata);
 
       const result = error.toString();
@@ -63,7 +67,10 @@ describe('BaseError', () => {
     });
 
     it('should handle metadata with special characters', () => {
-      const metadata = { message: 'Error: something went wrong', path: '/api/users' };
+      const metadata = {
+        message: 'Error: something went wrong',
+        path: '/api/users',
+      };
       const error = new BaseError('Test', metadata);
 
       const result = error.toString();
@@ -132,7 +139,7 @@ describe('BaseError', () => {
         name: 'BaseError',
         message: 'Test error',
         stack: expect.any(String),
-        cause: 'Unknown Cause'
+        cause: 'Unknown Cause',
       });
     });
 
@@ -164,7 +171,9 @@ describe('BaseError', () => {
 
   describe('fromCatch', () => {
     it('should return the same BaseError instance if error is already a BaseError', () => {
-      const originalError = new BaseError('Original error', { code: 'ERR_001' });
+      const originalError = new BaseError('Original error', {
+        code: 'ERR_001',
+      });
       const result = BaseError.fromCatch(originalError);
 
       expect(result).toBe(originalError);
@@ -221,7 +230,7 @@ describe('BaseError', () => {
         message: 'Error occurred',
         code: 'ERR_500',
         statusCode: 500,
-        timestamp: '2024-01-01T00:00:00Z'
+        timestamp: '2024-01-01T00:00:00Z',
       };
       const result = BaseError.fromCatch(errorObj);
 
@@ -248,10 +257,10 @@ describe('BaseError', () => {
         message: 'Complex error',
         nested: {
           level1: {
-            level2: 'deep value'
-          }
+            level2: 'deep value',
+          },
         },
-        array: [1, 2, 3]
+        array: [1, 2, 3],
       };
       const result = BaseError.fromCatch(complexError);
 
@@ -259,8 +268,8 @@ describe('BaseError', () => {
       expect(result.message).toBe('Complex error');
       expect(result.metadata.nested).toEqual({
         level1: {
-          level2: 'deep value'
-        }
+          level2: 'deep value',
+        },
       });
       expect(result.metadata.array).toEqual([1, 2, 3]);
     });
@@ -280,7 +289,7 @@ describe('BaseError', () => {
       const sym = Symbol('test');
       const errorObj = {
         message: 'Error with symbol',
-        [sym]: 'symbol value'
+        [sym]: 'symbol value',
       };
 
       const result = BaseError.fromCatch(errorObj);

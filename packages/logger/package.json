@@ -37,6 +37,7 @@
   "dependencies": {
     "vitest": "*",
     "winston": "*",
-    "winston-loki": "*"
+    "winston-loki": "*",
+    "@tkottke90/js-errors": "*"
   }
 }

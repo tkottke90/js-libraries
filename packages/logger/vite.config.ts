@@ -20,7 +20,7 @@ export default defineConfig(() => ({
       reportsDirectory: './coverage',
       provider: 'istanbul' as const,
       reporter: ['html', 'lcov', 'json', 'text'],
-      exclude: ['node_modules/', 'dist', '**/*.spec.ts', '**/*.test.ts']
+      exclude: ['node_modules/', 'dist', '**/*.spec.ts', '**/*.test.ts'],
     },
   },
 }));
