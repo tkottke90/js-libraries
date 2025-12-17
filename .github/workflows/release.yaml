@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Extract package info from git tag
         id: extract
-        uses: ./../actions/package-extractor
+        uses: ./actions/package-extractor
         with:
           git-tag: ${{ github.ref_name }}
 
@@ -35,7 +35,7 @@ jobs:
 
       # Cache node_modules
       - name: Setup Node.js and install dependencies
-        uses: ./../actions/setup-node-cicd
+        uses: ./actions/setup-node-cicd
         with:
           registry-url: ${{ secrets.PRIVATE_NPM_REGISTRY }}
           node-auth-token: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
@@ -58,7 +58,7 @@ jobs:
 
       - name: Extract Changelog
         id: extract-changelog
-        uses: ./../actions/release-changelog
+        uses: ./actions/release-changelog
         with:
           package-path: ${{needs.extract-package-info.outputs.package-name}}
       
