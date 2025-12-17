@@ -6,7 +6,8 @@
     "build": "nx run-many -t build",
     "test": "nx run-many -t test",
     "format": "prettier --check .",
-    "format:fix": "prettier --write ."
+    "format:fix": "prettier --write .",
+    "create-release": "nx release --skip-publish"
   },
   "private": true,
   "devDependencies": {

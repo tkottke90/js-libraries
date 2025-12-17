@@ -7,6 +7,9 @@ inputs:
     required: true
 
 outputs:
+  package-dir:
+    description: 'Where the package is located'
+    value: ${{ steps.extract.outputs.package-dir }}
   package-name:
     description: 'Extracted package name'
     value: ${{ steps.extract.outputs.package-name }}
@@ -23,20 +26,34 @@ runs:
       run: |
         TAG="${{ inputs.git-tag }}"
 
-        # Parse tag in format: {projectName}/v{version}
-        # Example: logger/v1.0.0
-        if [[ $TAG =~ ^([^/]+)/v(.+)$ ]]; then
-          PACKAGE_NAME="${BASH_REMATCH[1]}"
-          PACKAGE_VERSION="${BASH_REMATCH[2]}"
+        # Parse tag in format: @{scope}/{projectName}/v{version} or {projectName}/v{version}
+        # Examples: @tkottke90/logger/v0.2.0 or logger/v1.0.0
+        if [[ $TAG =~ ^(@[^/]+/)?([^/]+)/v(.+)$ ]]; then
+          SCOPE="${BASH_REMATCH[1]}"
+          PACKAGE_NAME_ONLY="${BASH_REMATCH[2]}"
+          PACKAGE_VERSION="${BASH_REMATCH[3]}"
 
-          echo "package-name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          # Build full package name with scope if present
+          if [[ -n "$SCOPE" ]]; then
+            FULL_PACKAGE_NAME="${SCOPE}${PACKAGE_NAME_ONLY}"
+          else
+            FULL_PACKAGE_NAME="$PACKAGE_NAME_ONLY"
+          fi
+
+          PACKAGE_DIR="packages/$PACKAGE_NAME_ONLY"
+
+          echo "package-name=$FULL_PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "package-dir=$PACKAGE_DIR" >> $GITHUB_OUTPUT
           echo "package-version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
 
           echo "✓ Parsed git tag: $TAG"
-          echo "  Package Name: $PACKAGE_NAME"
+          echo "  Full Package Name: $FULL_PACKAGE_NAME"
+          echo "  Package Name (without scope): $PACKAGE_NAME_ONLY"
+          echo "  Package Directory: $PACKAGE_DIR"
           echo "  Package Version: $PACKAGE_VERSION"
         else
           echo "✗ Failed to parse git tag: $TAG"
-          echo "  Expected format: {projectName}/v{version} (e.g., logger/v1.0.0)"
+          echo "  Expected format: @{scope}/{projectName}/v{version} or {projectName}/v{version}"
+          echo "  Examples: @tkottke90/js-errors/v0.1.0 or logger/v1.0.0"
           exit 1
         fi

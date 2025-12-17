@@ -5,6 +5,7 @@ run-name: Release ${{ inputs.package }}
 on:
   push:
     tags:
+      - '@*/*/v*'
       - '*/v*'
 
 permissions:
