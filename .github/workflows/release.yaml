@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       package-name: ${{ steps.extract.outputs.package-name }}
+      package-dir: ${{ steps.extract.outputs.package-dir }}
       package-version: ${{ steps.extract.outputs.package-version }}
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +57,7 @@ jobs:
           echo "| Package Version | \`${{ needs.extract-package-info.outputs.package-version }}\` |" >> $GITHUB_STEP_SUMMARY
 
       - name: Validate Changes
-        run: npx nx run-many -t lint test build typecheck --project=${{needs.extract-package-info.outputs.package-name}}
+        run: npx nx run ${{needs.extract-package-info.outputs.package-dir}}:lint && npx nx run ${{needs.extract-package-info.outputs.package-dir}}:test && npx nx run ${{needs.extract-package-info.outputs.package-dir}}:build && npx nx run ${{needs.extract-package-info.outputs.package-dir}}:typecheck
 
       - name: Publish to NPM
         run: |
