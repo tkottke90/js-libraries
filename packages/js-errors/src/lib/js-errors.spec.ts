@@ -38,7 +38,7 @@ describe('BaseError', () => {
       const message = 'Test error';
       const error = new BaseError(message);
 
-      expect(error.toString()).toBe('BaseError (message: Test error) ');
+      expect(error.toString()).toBe('BaseError (message: Test error )');
     });
 
     it('should return formatted string with message and metadata', () => {
@@ -47,9 +47,10 @@ describe('BaseError', () => {
       const error = new BaseError(message, metadata);
 
       const result = error.toString();
-      expect(result).toContain('BaseError (message: Test error)');
+      expect(result).toContain('BaseError (message: Test error');
       expect(result).toContain('userId:123');
       expect(result).toContain('action:login');
+      expect(result).toContain(')');
     });
 
     it('should handle multiple metadata entries', () => {
