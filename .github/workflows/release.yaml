@@ -61,13 +61,15 @@ jobs:
 
       - name: Publish to NPM
         run: |
-          npm publish -w ${{needs.extract-package-info.outputs.package-name}}
+          npm publish -w ${{needs.extract-package-info.outputs.package-dir}}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
 
       - name: Extract Changelog
         id: extract-changelog
         uses: ./actions/release-changelog
         with:
-          package-path: ${{needs.extract-package-info.outputs.package-name}}
+          package-path: ${{needs.extract-package-info.outputs.package-dir}}
       
 
       - name: Create Release
