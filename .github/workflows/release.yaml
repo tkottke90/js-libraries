@@ -19,6 +19,11 @@ jobs:
       package-name: ${{ steps.extract.outputs.package-name }}
       package-version: ${{ steps.extract.outputs.package-version }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: tree:0
+          fetch-depth: 0
+      
       - name: Extract package info from git tag
         id: extract
         uses: ./actions/package-extractor
@@ -29,11 +34,6 @@ jobs:
     needs: extract-package-info
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          filter: tree:0
-          fetch-depth: 0
-      
       - uses: actions/checkout@v4
         with:
           filter: tree:0
