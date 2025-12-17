@@ -1,5 +1,5 @@
 {
-  "name": "@tkottke-js-helpers/logger",
+  "name": "@tkottke90/logger",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -35,6 +35,8 @@
     }
   },
   "dependencies": {
-    "vitest": "*"
+    "vitest": "*",
+    "winston": "*",
+    "winston-loki": "*"
   }
 }

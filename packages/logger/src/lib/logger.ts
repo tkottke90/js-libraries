@@ -1,5 +1,6 @@
 import winston, { Logger, LoggerOptions, format, transports } from 'winston';
 import LokiTransport from 'winston-loki';
+import { InvalidGrafanaConfig } from './errors.js';
 const { combine, timestamp, json, errors, simple } = format;
 
 const LoggerInstance = winston.createLogger();
@@ -25,14 +26,26 @@ export function addErrorFileLogger(filename: string, level?: string, logger: Log
   );
 }
 
-export function addGrafanaLokiLogger(grafanaUrl: string, appName: string, level?: string, logger: Logger = LoggerInstance) {
+
+interface GrafanaLokiLoggerOptions {
+  url?: string;
+  level?: string;
+}
+
+export function addGrafanaLokiLogger(appName: string, options?: GrafanaLokiLoggerOptions, logger: Logger = LoggerInstance) {
+  const url = process.env.LOGGER_GRAFANA_URL ?? options?.url ?? '';
+
+  if (!url) {
+    throw new InvalidGrafanaConfig('Missing URL - Please provide the url in the environment (as LOGGER_GRAFANA_URL) or in the options.url property')
+  }
+  
   logger.add(
     new LokiTransport({
-      host: grafanaUrl,
+      host: url,
       json: true,
       labels: { job: appName },
       format: combine(timestamp(), json()),
-      level: level ?? logger.level
+      level: options?.level ?? logger.level
     })
   );
 }

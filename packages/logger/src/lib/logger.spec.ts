@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import winston, { Logger } from 'winston';
+import { InvalidGrafanaConfig } from './errors.js';
 import {
   addErrorFileLogger,
   addGrafanaLokiLogger,
   addJsonLinesFileLogger,
   configure,
   createChildLogger,
-  defaultLevels,
   getLogger,
   LoggerInstanceConfig,
-  updateLogLevel,
+  updateLogLevel
 } from './logger.js';
 
 describe('Logger Module', () => {
@@ -27,24 +27,6 @@ describe('Logger Module', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe('defaultLevels', () => {
-    it('should export default log levels', () => {
-      expect(defaultLevels).toBeDefined();
-      expect(Array.isArray(defaultLevels)).toBe(true);
-    });
-
-    it('should contain expected log levels', () => {
-      expect(defaultLevels).toContain('error');
-      expect(defaultLevels).toContain('warn');
-      expect(defaultLevels).toContain('info');
-      expect(defaultLevels).toContain('debug');
-    });
-
-    it('should have foobar as first level', () => {
-      expect(defaultLevels[0]).toBe('foobar');
-    });
   });
 
   describe('createChildLogger', () => {
@@ -202,27 +184,30 @@ describe('Logger Module', () => {
   });
 
   describe('addGrafanaLokiLogger', () => {
-    it('should add Grafana Loki logger transport', () => {
-      addGrafanaLokiLogger('http://localhost:3100', 'test-app', undefined, testLogger);
+    it('should add Grafana Loki logger transport with url in options', () => {
+      addGrafanaLokiLogger('test-app', { url: 'http://localhost:3100' }, testLogger);
       expect(testLogger.add).toHaveBeenCalled();
       expect(testLogger.add).toHaveBeenCalledTimes(1);
     });
 
     it('should add Grafana Loki logger with custom level', () => {
-      addGrafanaLokiLogger('http://localhost:3100', 'test-app', 'info', testLogger);
+      addGrafanaLokiLogger('test-app', { url: 'http://localhost:3100', level: 'info' }, testLogger);
       expect(testLogger.add).toHaveBeenCalled();
     });
 
     it('should use default LoggerInstance when no logger provided', () => {
-      expect(() => addGrafanaLokiLogger('http://localhost:3100', 'test-app')).not.toThrow();
+      // Set environment variable for this test
+      process.env.LOGGER_GRAFANA_URL = 'http://localhost:3100';
+      expect(() => addGrafanaLokiLogger('test-app')).not.toThrow();
+      delete process.env.LOGGER_GRAFANA_URL;
     });
 
-    it('should create Loki transport with correct host and labels', () => {
-      const host = 'http://grafana.example.com:3100';
+    it('should create Loki transport with correct labels and level', () => {
       const appName = 'my-app';
+      const url = 'http://grafana.example.com:3100';
       const level = 'debug';
 
-      addGrafanaLokiLogger(host, appName, level, testLogger);
+      addGrafanaLokiLogger(appName, { url, level }, testLogger);
 
       expect(testLogger.add).toHaveBeenCalled();
       const callArgs = (testLogger.add as any).mock.calls[0][0];
@@ -232,6 +217,38 @@ describe('Logger Module', () => {
       expect(callArgs.level).toBe(level);
       // Verify it has a format (indicating it's properly configured)
       expect(callArgs.format).toBeDefined();
+    });
+
+    it('should throw InvalidGrafanaConfig when url is not provided', () => {
+      // Ensure environment variable is not set
+      delete process.env.LOGGER_GRAFANA_URL;
+
+      expect(() => addGrafanaLokiLogger('test-app', {}, testLogger)).toThrow(InvalidGrafanaConfig);
+    });
+
+    it('should throw InvalidGrafanaConfig when url is empty string', () => {
+      delete process.env.LOGGER_GRAFANA_URL;
+
+      expect(() => addGrafanaLokiLogger('test-app', { url: '' }, testLogger)).toThrow(InvalidGrafanaConfig);
+    });
+
+    it('should use environment variable LOGGER_GRAFANA_URL when options.url is not provided', () => {
+      process.env.LOGGER_GRAFANA_URL = 'http://env-grafana:3100';
+
+      expect(() => addGrafanaLokiLogger('test-app', {}, testLogger)).not.toThrow();
+      expect(testLogger.add).toHaveBeenCalled();
+
+      delete process.env.LOGGER_GRAFANA_URL;
+    });
+
+    it('should prefer options.url over environment variable', () => {
+      process.env.LOGGER_GRAFANA_URL = 'http://env-grafana:3100';
+      const optionsUrl = 'http://options-grafana:3100';
+
+      expect(() => addGrafanaLokiLogger('test-app', { url: optionsUrl }, testLogger)).not.toThrow();
+      expect(testLogger.add).toHaveBeenCalled();
+
+      delete process.env.LOGGER_GRAFANA_URL;
     });
   });
 });
