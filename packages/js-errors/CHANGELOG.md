@@ -1,3 +1,7 @@
+## 1.0.2 (2025-12-18)
+
+This was a version bump only for @tkottke90/js-errors to align it with other projects, there were no code changes.
+
 ## 1.0.2-0 (2025-12-18)
 
 This was a version bump only for @tkottke90/js-errors to align it with other projects, there were no code changes.
