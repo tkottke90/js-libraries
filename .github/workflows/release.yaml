@@ -61,6 +61,8 @@ jobs:
 
       - name: Publish to NPM
         run: |
+          [ -d "${{needs.extract-package-info.outputs.package-dir}}/dist" ] || { echo "Missing dist folder: ${{needs.extract-package-info.outputs.package-dir}}/dist""; exit 1; }
+
           npm publish -w ${{needs.extract-package-info.outputs.package-dir}}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
