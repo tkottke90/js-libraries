@@ -1150,6 +1150,234 @@ describe('useFormField', () => {
       expect(props.props.value).toBe('https://example.com');
     });
   });
+
+  describe('input type: select', () => {
+    describe('single select', () => {
+      it('should initialize with empty string', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('country', 'select', { element: 'select' })
+        );
+
+        // Assert
+        expect(result.current.data.value).toBe('');
+      });
+
+      it('should initialize with default value when provided', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('country', 'select', {
+            element: 'select',
+            defaultValue: 'US'
+          })
+        );
+
+        // Assert
+        expect(result.current.data.value).toBe('US');
+      });
+
+      it('should update data signal with string value on change', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('country', 'select', { element: 'select' })
+        );
+
+        // Act
+        act(() => {
+          result.current.data.value = 'CA';
+        });
+
+        // Assert
+        expect(result.current.data.value).toBe('CA');
+      });
+
+      it('should set value and defaultValue props', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('country', 'select', {
+            element: 'select',
+            defaultValue: 'UK',
+          })
+        );
+
+        // Assert
+        expect(result.current.data.value).toBe('UK');
+      });
+
+      it('should reset to empty string when no default provided', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('country', 'select', { element: 'select' })
+        );
+
+        // Act - change value
+        act(() => {
+          result.current.data.value = 'FR';
+        });
+        expect(result.current.data.value).toBe('FR');
+
+        // Act - reset
+        act(() => {
+          result.current.reset();
+        });
+
+        // Assert
+        expect(result.current.data.value).toBe('');
+      });
+
+      it('should reset to default value when provided', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('country', 'select', {
+            element: 'select',
+            defaultValue: 'US',
+          })
+        );
+
+        // Act - change value
+        act(() => {
+          result.current.data.value = 'CA';
+        });
+
+        // Act - reset
+        act(() => {
+          result.current.reset();
+        });
+
+        // Assert
+        expect(result.current.data.value).toBe('US');
+      });
+    });
+
+    describe('multi-select', () => {
+      it('should initialize with empty array', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('countries', 'select', {
+            element: 'select',
+            multiple: true,
+          })
+        );
+
+        // Assert
+        expect(result.current.data.value).toEqual([]);
+      });
+
+      it('should initialize with default value array when provided', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('countries', 'select', {
+            element: 'select',
+            multiple: true,
+            defaultValue: ['US', 'CA'],
+          })
+        );
+
+        // Assert
+        expect(result.current.data.value).toEqual(['US', 'CA']);
+      });
+
+      it('should update data signal with array value on change', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('countries', 'select', {
+            element: 'select',
+            multiple: true,
+          })
+        );
+
+        // Act
+        act(() => {
+          result.current.data.value = ['US', 'CA', 'UK'];
+        });
+
+        // Assert
+        expect(result.current.data.value).toEqual(['US', 'CA', 'UK']);
+      });
+
+      it('should reset to empty array when no default provided', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('countries', 'select', {
+            element: 'select',
+            multiple: true,
+          })
+        );
+
+        // Act - change value
+        act(() => {
+          result.current.data.value = ['US', 'CA'];
+        });
+
+        // Act - reset
+        act(() => {
+          result.current.reset();
+        });
+
+        // Assert
+        expect(result.current.data.value).toEqual([]);
+      });
+
+      it('should reset to default array when provided', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('countries', 'select', {
+            element: 'select',
+            multiple: true,
+            defaultValue: ['US', 'CA'],
+          })
+        );
+
+        // Act - change value
+        act(() => {
+          result.current.data.value = ['FR', 'DE'];
+        });
+
+        // Act - reset
+        act(() => {
+          result.current.reset();
+        });
+
+        // Assert
+        expect(result.current.data.value).toEqual(['US', 'CA']);
+      });
+    });
+
+    describe('toJSON', () => {
+      it('should serialize single select value', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('country', 'select', {
+            element: 'select',
+            defaultValue: 'US',
+          })
+        );
+
+        // Act
+        const json = result.current.toJSON();
+
+        // Assert
+        expect(json).toEqual({ country: 'US' });
+      });
+
+      it('should serialize multi-select array value', () => {
+        // Arrange
+        const { result } = renderHook(() =>
+          useFormField('countries', 'select', {
+            element: 'select',
+            multiple: true,
+            defaultValue: ['US', 'CA', 'UK'],
+          })
+        );
+
+        // Act
+        const json = result.current.toJSON();
+
+        // Assert
+        expect(json).toEqual({ countries: ['US', 'CA', 'UK'] });
+      });
+    });
+  });
 });
 
 describe('createInputValueProps', () => {
@@ -1552,6 +1780,56 @@ describe('createInputValueProps', () => {
       expect(props.defaultValue).toBe(testValue);
     });
   });
+
+  describe('select type', () => {
+    it('should return value and defaultValue props for single select', () => {
+      // Arrange
+      const testValue = 'US';
+
+      // Act
+      const props = createInputValueProps('select', testValue);
+
+      // Assert
+      expect(props.value).toBe(testValue);
+      expect(props.defaultValue).toBe(testValue);
+    });
+
+    it('should return value and defaultValue props for multi-select array', () => {
+      // Arrange
+      const testValue = ['US', 'CA', 'UK'];
+
+      // Act
+      const props = createInputValueProps('select', testValue);
+
+      // Assert
+      expect(props.value).toEqual(testValue);
+      expect(props.defaultValue).toEqual(testValue);
+    });
+
+    it('should handle empty string for single select', () => {
+      // Arrange
+      const testValue = '';
+
+      // Act
+      const props = createInputValueProps('select', testValue);
+
+      // Assert
+      expect(props.value).toBe('');
+      expect(props.defaultValue).toBe('');
+    });
+
+    it('should handle empty array for multi-select', () => {
+      // Arrange
+      const testValue: string[] = [];
+
+      // Act
+      const props = createInputValueProps('select', testValue);
+
+      // Assert
+      expect(props.value).toEqual([]);
+      expect(props.defaultValue).toEqual([]);
+    });
+  });
 });
 
 describe('getInitialValue', () => {
@@ -1674,6 +1952,23 @@ describe('getInitialValue', () => {
 
     // Assert
     expect(result).toBe('');
+  });
+
+  it('should return empty string for select type without multiple', () => {
+    // Act
+    const result = getInitialValue('select', { element: 'select' });
+
+    // Assert
+    expect(result).toBe('');
+  });
+
+  it('should return empty array for select type with multiple', () => {
+    // Act
+    const result = getInitialValue('select', { element: 'select', multiple: true });
+
+    // Assert
+    expect(result).toEqual([]);
+    expect(Array.isArray(result)).toBe(true);
   });
 });
 
@@ -2051,6 +2346,30 @@ describe('parseChangeEventValue', () => {
       expect(result).toBe('https://example.com');
     });
   });
+
+  describe('select type', () => {
+    it('should return string value for single select', () => {
+      // Arrange
+      const mockEvent = { target: { value: 'US' } } as Event;
+
+      // Act
+      const result = parseChangeEventValue('select', mockEvent);
+
+      // Assert
+      expect(result).toBe('US');
+    });
+
+    it('should handle empty string for single select', () => {
+      // Arrange
+      const mockEvent = { target: { value: '' } } as Event;
+
+      // Act
+      const result = parseChangeEventValue('select', mockEvent);
+
+      // Assert
+      expect(result).toBe('');
+    });
+  });
 });
 
 describe('toJson', () => {
@@ -2335,6 +2654,58 @@ describe('toJson', () => {
 
       // Assert
       expect(result.website).toBe('https://example.com');
+    });
+  });
+
+  describe('select type', () => {
+    it('should handle single select value', () => {
+      // Arrange
+      const fieldName = 'country';
+      const value = 'US';
+
+      // Act
+      const result = toJson('select', fieldName, value);
+
+      // Assert
+      expect(result).toHaveProperty('country');
+      expect(result.country).toBe('US');
+    });
+
+    it('should handle multi-select array value', () => {
+      // Arrange
+      const fieldName = 'countries';
+      const value = ['US', 'CA', 'UK'];
+
+      // Act
+      const result = toJson('select', fieldName, value as any);
+
+      // Assert
+      expect(result).toHaveProperty('countries');
+      expect(result.countries).toEqual(['US', 'CA', 'UK']);
+    });
+
+    it('should handle empty string for single select', () => {
+      // Arrange
+      const fieldName = 'country';
+      const value = '';
+
+      // Act
+      const result = toJson('select', fieldName, value);
+
+      // Assert
+      expect(result.country).toBe('');
+    });
+
+    it('should handle empty array for multi-select', () => {
+      // Arrange
+      const fieldName = 'countries';
+      const value: string[] = [];
+
+      // Act
+      const result = toJson('select', fieldName, value as any);
+
+      // Assert
+      expect(result.countries).toEqual([]);
     });
   });
 });

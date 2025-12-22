@@ -5,7 +5,7 @@ import { useCallback, useMemo, useRef } from 'preact/hooks';
 
 type HTMLInputTypeProp = HTMLInputElement['type'];
 
-interface useFormFieldOptions<TType extends HTMLInputTypeProp> {
+interface useFormFieldInputOptions<TType extends HTMLInputTypeProp> {
   /**
    * Custom id for the field.  If not provided, the name will be used.
    */
@@ -24,8 +24,40 @@ interface useFormFieldOptions<TType extends HTMLInputTypeProp> {
   /**
    * Custom element to use instead of the default `input` element.  This can be a string representing a native element or a custom component.
    */
-  element?: keyof JSX.IntrinsicElements | ComponentType<any>;
+  element?: Exclude<keyof JSX.IntrinsicElements, 'select'> | ComponentType<any>;
 }
+
+interface useFormFieldSelectOptions<TType extends HTMLInputTypeProp> {
+  /**
+   * Custom id for the field.  If not provided, the name will be used.
+   */
+  id?: string;
+
+  /**
+   * Error message to display to the user when the field is invalid.
+   */
+  error?: string;
+
+  /**
+   * Initial value for the field.
+   */
+  defaultValue?: InputDataType<TType>;
+
+  /**
+   * Custom element to use instead of the default `input` element.  This can be a string representing a native element or a custom component.
+   */
+  element?: 'select';
+
+  /**
+   * Whether the select should allow multiple values.
+   */
+  multiple?: boolean;
+}
+
+type useFormFieldOptions<TType extends HTMLInputTypeProp> =
+  TType extends 'select'
+    ? useFormFieldSelectOptions<TType>
+    : useFormFieldInputOptions<TType>;
 
 type InputDataType<TType extends HTMLInputTypeProp> = TType extends 'number'
   ? number
@@ -43,6 +75,8 @@ type InputDataType<TType extends HTMLInputTypeProp> = TType extends 'number'
   ? Date
   : TType extends 'file'
   ? File[]
+  : TType extends 'select'
+  ? string | string[]
   : string;
 
 export function createInputValueProps(
@@ -82,7 +116,7 @@ export function createInputValueProps(
   return props;
 }
 
-export function getInitialValue<TType extends HTMLInputTypeProp>(type: TType) {
+export function getInitialValue<TType extends HTMLInputTypeProp>(type: TType, options?: useFormFieldOptions<TType>) {
   if (type === 'number') {
     return 0 as InputDataType<TType>;
   } else if (type === 'checkbox') {
@@ -97,6 +131,8 @@ export function getInitialValue<TType extends HTMLInputTypeProp>(type: TType) {
     return new Date() as InputDataType<TType>;
   } else if (type === 'file') {
     return [] as File[] as InputDataType<TType>;
+  } else if (type === 'select') {
+    return (options as useFormFieldSelectOptions<TType>)?.multiple ? [] : '' as InputDataType<TType>;
   } else {
     return '' as InputDataType<TType>;
   }
@@ -261,13 +297,13 @@ export function useFormField<TType extends HTMLInputElement['type']>(
   options?: useFormFieldOptions<TType>
 ) {
   const data = useSignal<InputDataType<TType>>(
-    options?.defaultValue ?? getInitialValue(type)
+    (options?.defaultValue !== undefined ? options.defaultValue : getInitialValue(type, options)) as InputDataType<TType>
   );
   const inputRef = useRef<HTMLInputElement>(null);
 
   const reset = useCallback(() => {
-    data.value = options?.defaultValue ?? getInitialValue(type);
-  }, [type]);
+    data.value = (options?.defaultValue !== undefined ? options.defaultValue : getInitialValue(type, options)) as InputDataType<TType>;
+  }, [type, options]);
 
   const ElementComponent = options?.element ?? 'input';
 
