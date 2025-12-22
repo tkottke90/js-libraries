@@ -182,20 +182,6 @@ export function toJson<TType extends HTMLInputTypeProp>(
  * @param {keyof JSX.IntrinsicElements | ComponentType<any>} [options.element='input'] - Custom element to render instead of the default input element.
  *   Can be a string (e.g., 'textarea', 'select') or a custom Preact component.
  *
- * @returns {Object} Form field object with the following properties:
- * @returns {ComponentType} element - A Preact component that renders the form field. Accepts all standard HTML input props.
- *   The component automatically includes name, type, id, and appropriate value props (value/checked/files).
- * @returns {string} name - The name of the field (same as the name parameter).
- * @returns {TType} type - The input type (same as the type parameter).
- * @returns {Signal<InputDataType<TType>>} data - A Preact signal containing the current field value.
- *   The value type is determined by the input type (string, number, boolean, Date, or File[]).
- * @returns {() => void} reset - Function to reset the field to its default value or type-specific initial value.
- * @returns {string} id - The id of the field (from options.id or defaults to name).
- * @returns {string | undefined} error - The error message (from options.error).
- * @returns {RefObject<HTMLInputElement>} ref - A ref object for accessing the underlying DOM element.
- * @returns {() => Record<string, any>} toJSON - Function that returns a JSON-serializable object with the field name as key and current value.
- *   For file inputs, returns an array of filenames instead of File objects.
- *
  * @example
  * // Basic text input
  * const username = useFormField('username', 'text');
@@ -306,14 +292,49 @@ export function useFormField<TType extends HTMLInputElement['type']>(
   );
 
   return {
+    /**
+     * A Preact component that renders the form field.  Accepts all standard HTML input props.
+     */
     element: Input,
+
+    /**
+     * The name of the field.
+     */
     name,
+
+    /**
+     * The type of the field.
+     */
     type,
+
+    /**
+     * A Preact signal which contains the current value of the field.  This signal is automatically updated when the user changes the value of the input.
+     */
     data,
+
+    /**
+     * A function which can be called to reset the `data` signal to its initial value.
+     */
     reset,
+
+    /**
+     * The id of the field.  This is either the `options.id` parameter or the `name` parameter if no custom id was provided.
+     */
     id: options?.id ?? name,
+
+    /**
+     * The error message provided in the `options.error` parameter.
+     */
     error: options?.error,
+
+    /**
+     * A ref which can be passed to the `element` to gain access to the underlying input element.
+     */
     ref: inputRef,
+
+    /**
+     * A function which can be called to get a serializable object which includes the name and value of the field.  This is useful for use with fetch or other APIs.
+     */
     toJSON: () => toJson(type, name, data.value),
   };
 }
