@@ -14,11 +14,15 @@
       "react": ["./node_modules/preact/compat"],
       "react-dom": ["./node_modules/preact/compat"]
     },
-    
+
     "jsx": "react-jsx",
-    "jsxImportSource": "preact",
+    "jsxImportSource": "preact"
   },
-  "include": ["src/**/*.ts", "src/lib/form-field.tsx", "src/lib/form-field.spec.tsx"],
+  "include": [
+    "src/**/*.ts",
+    "src/lib/form-field.tsx",
+    "src/lib/form-field.spec.tsx"
+  ],
   "references": [],
   "exclude": [
     "vite.config.ts",

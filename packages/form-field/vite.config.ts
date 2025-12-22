@@ -9,8 +9,8 @@ export default defineConfig(() => ({
   alias: {
     '@': path.resolve(__dirname, './src'),
     // Optional: Add the react aliases if you're using preact/compat
-    'react': 'preact/compat',
-    'react-dom': 'preact/compat'
+    react: 'preact/compat',
+    'react-dom': 'preact/compat',
   },
   test: {
     name: '@tkottke-js-helpers/form-field',

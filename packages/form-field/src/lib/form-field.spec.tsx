@@ -5,7 +5,7 @@ import {
   getInitialValue,
   parseChangeEventValue,
   toJson,
-  useFormField
+  useFormField,
 } from './form-field.js';
 
 describe('useFormField', () => {
@@ -43,9 +43,15 @@ describe('useFormField', () => {
 
     it('should initialize with type-specific default value when no default provided', () => {
       // Act
-      const { result: textResult } = renderHook(() => useFormField('name', 'text'));
-      const { result: numberResult } = renderHook(() => useFormField('age', 'number'));
-      const { result: checkboxResult } = renderHook(() => useFormField('agreed', 'checkbox'));
+      const { result: textResult } = renderHook(() =>
+        useFormField('name', 'text')
+      );
+      const { result: numberResult } = renderHook(() =>
+        useFormField('age', 'number')
+      );
+      const { result: checkboxResult } = renderHook(() =>
+        useFormField('agreed', 'checkbox')
+      );
 
       // Assert
       expect(textResult.current.data.value).toBe('');
@@ -438,7 +444,9 @@ describe('useFormField', () => {
 
       // Act - change the value
       act(() => {
-        result.current.data.value = [new File(['content'], 'test.txt')] as File[];
+        result.current.data.value = [
+          new File(['content'], 'test.txt'),
+        ] as File[];
       });
 
       // Act - reset
@@ -538,7 +546,7 @@ describe('useFormField', () => {
       const { result } = renderHook(() => useFormField('documents', 'file'));
       const files = [
         new File(['content1'], 'file1.txt'),
-        new File(['content2'], 'file2.pdf')
+        new File(['content2'], 'file2.pdf'),
       ];
 
       // Act
@@ -623,7 +631,10 @@ describe('useFormField', () => {
     it('should maintain id attribute with custom element', () => {
       // Act
       const { result } = renderHook(() =>
-        useFormField('username', 'text', { id: 'custom-id', element: 'textarea' })
+        useFormField('username', 'text', {
+          id: 'custom-id',
+          element: 'textarea',
+        })
       );
 
       // Assert
@@ -635,7 +646,7 @@ describe('useFormField', () => {
     it('should initialize with empty string', () => {
       // Arrange
       const { result } = renderHook(() => useFormField('name'));
-      
+
       // Assert
       expect(result.current.data.value).toBe('');
     });
@@ -799,7 +810,9 @@ describe('useFormField', () => {
     it('should convert value to ISO string for input', () => {
       // Arrange
       const testDate = new Date('2024-01-15');
-      const { result } = renderHook(() => useFormField('birthday', 'date', { defaultValue: testDate }));
+      const { result } = renderHook(() =>
+        useFormField('birthday', 'date', { defaultValue: testDate })
+      );
 
       // Assert
       const Input = result.current.element;
@@ -810,7 +823,9 @@ describe('useFormField', () => {
     it('should set value and defaultValue as ISO string', () => {
       // Arrange
       const testDate = new Date('2024-01-15');
-      const { result } = renderHook(() => useFormField('birthday', 'date', { defaultValue: testDate }));
+      const { result } = renderHook(() =>
+        useFormField('birthday', 'date', { defaultValue: testDate })
+      );
 
       // Assert
       const Input = result.current.element;
@@ -823,7 +838,9 @@ describe('useFormField', () => {
   describe('input type: datetime-local', () => {
     it('should initialize with Date object', () => {
       // Arrange
-      const { result } = renderHook(() => useFormField('appointment', 'datetime-local'));
+      const { result } = renderHook(() =>
+        useFormField('appointment', 'datetime-local')
+      );
 
       // Assert
       expect(result.current.data.value).toBeInstanceOf(Date);
@@ -831,7 +848,9 @@ describe('useFormField', () => {
 
     it('should update data signal with Date object on change', () => {
       // Arrange
-      const { result } = renderHook(() => useFormField('appointment', 'datetime-local'));
+      const { result } = renderHook(() =>
+        useFormField('appointment', 'datetime-local')
+      );
       const newDate = new Date('2024-01-15T14:30:00');
 
       // Act
@@ -846,7 +865,11 @@ describe('useFormField', () => {
     it('should convert value to ISO string for input', () => {
       // Arrange
       const testDate = new Date('2024-01-15T14:30:00');
-      const { result } = renderHook(() => useFormField('appointment', 'datetime-local', { defaultValue: testDate }));
+      const { result } = renderHook(() =>
+        useFormField('appointment', 'datetime-local', {
+          defaultValue: testDate,
+        })
+      );
 
       // Assert
       const Input = result.current.element;
@@ -881,7 +904,9 @@ describe('useFormField', () => {
     it('should convert value to ISO string for input', () => {
       // Arrange
       const testDate = new Date('2024-01-15T14:30:00');
-      const { result } = renderHook(() => useFormField('alarm', 'time', { defaultValue: testDate }));
+      const { result } = renderHook(() =>
+        useFormField('alarm', 'time', { defaultValue: testDate })
+      );
 
       // Assert
       const Input = result.current.element;
@@ -916,7 +941,9 @@ describe('useFormField', () => {
     it('should convert value to ISO string for input', () => {
       // Arrange
       const testDate = new Date('2024-01-01');
-      const { result } = renderHook(() => useFormField('period', 'month', { defaultValue: testDate }));
+      const { result } = renderHook(() =>
+        useFormField('period', 'month', { defaultValue: testDate })
+      );
 
       // Assert
       const Input = result.current.element;
@@ -928,7 +955,9 @@ describe('useFormField', () => {
   describe('input type: week', () => {
     it('should initialize with Date object', () => {
       // Arrange
-      const { result } = renderHook(() => useFormField('weekSelection', 'week'));
+      const { result } = renderHook(() =>
+        useFormField('weekSelection', 'week')
+      );
 
       // Assert
       expect(result.current.data.value).toBeInstanceOf(Date);
@@ -936,7 +965,9 @@ describe('useFormField', () => {
 
     it('should update data signal with Date object on change', () => {
       // Arrange
-      const { result } = renderHook(() => useFormField('weekSelection', 'week'));
+      const { result } = renderHook(() =>
+        useFormField('weekSelection', 'week')
+      );
       const newDate = new Date('2024-01-15');
 
       // Act
@@ -951,7 +982,9 @@ describe('useFormField', () => {
     it('should convert value to ISO string for input', () => {
       // Arrange
       const testDate = new Date('2024-01-15');
-      const { result } = renderHook(() => useFormField('weekSelection', 'week', { defaultValue: testDate }));
+      const { result } = renderHook(() =>
+        useFormField('weekSelection', 'week', { defaultValue: testDate })
+      );
 
       // Assert
       const Input = result.current.element;
@@ -973,7 +1006,9 @@ describe('useFormField', () => {
     it('should update data signal with FileList on change', () => {
       // Arrange
       const { result } = renderHook(() => useFormField('upload', 'file'));
-      const mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
+      const mockFile = new File(['content'], 'test.txt', {
+        type: 'text/plain',
+      });
 
       // Act
       act(() => {
@@ -987,8 +1022,12 @@ describe('useFormField', () => {
 
     it('should set files prop instead of value', () => {
       // Arrange
-      const mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
-      const { result } = renderHook(() => useFormField('upload', 'file', { defaultValue: [mockFile] }));
+      const mockFile = new File(['content'], 'test.txt', {
+        type: 'text/plain',
+      });
+      const { result } = renderHook(() =>
+        useFormField('upload', 'file', { defaultValue: [mockFile] })
+      );
 
       // Assert
       const Input = result.current.element;
@@ -1399,7 +1438,9 @@ describe('createInputValueProps', () => {
   describe('file type', () => {
     it('should return files prop', () => {
       // Arrange
-      const mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
+      const mockFile = new File(['content'], 'test.txt', {
+        type: 'text/plain',
+      });
       const testValue = [mockFile];
 
       // Act
@@ -1411,7 +1452,9 @@ describe('createInputValueProps', () => {
 
     it('should set files to the provided File array', () => {
       // Arrange
-      const mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
+      const mockFile = new File(['content'], 'test.txt', {
+        type: 'text/plain',
+      });
       const testValue = [mockFile];
 
       // Act
@@ -1423,7 +1466,9 @@ describe('createInputValueProps', () => {
 
     it('should not return value or defaultValue props', () => {
       // Arrange
-      const mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
+      const mockFile = new File(['content'], 'test.txt', {
+        type: 'text/plain',
+      });
       const testValue = [mockFile];
 
       // Act
@@ -1919,7 +1964,10 @@ describe('parseChangeEventValue', () => {
 
     it('should handle FileList object', () => {
       // Arrange
-      const mockFiles = [new File(['content'], 'file1.txt'), new File(['content2'], 'file2.txt')];
+      const mockFiles = [
+        new File(['content'], 'file1.txt'),
+        new File(['content2'], 'file2.txt'),
+      ];
       const mockEvent = { target: { files: mockFiles } } as Event;
 
       // Act
@@ -1946,7 +1994,7 @@ describe('parseChangeEventValue', () => {
       const mockFiles = [
         new File(['content1'], 'file1.txt'),
         new File(['content2'], 'file2.txt'),
-        new File(['content3'], 'file3.txt')
+        new File(['content3'], 'file3.txt'),
       ];
       const mockEvent = { target: { files: mockFiles } } as Event;
 
@@ -2201,7 +2249,7 @@ describe('toJson', () => {
       const fieldName = 'documents';
       const value = [
         new File(['content1'], 'file1.txt'),
-        new File(['content2'], 'file2.pdf')
+        new File(['content2'], 'file2.pdf'),
       ];
 
       // Act
@@ -2229,7 +2277,7 @@ describe('toJson', () => {
       const value = [
         new File(['content1'], 'doc1.txt'),
         new File(['content2'], 'doc2.txt'),
-        new File(['content3'], 'doc3.txt')
+        new File(['content3'], 'doc3.txt'),
       ];
 
       // Act

@@ -1,7 +1,7 @@
-import { useSignal } from "@preact/signals";
-import { JSX } from "preact";
-import { ChangeEvent, ComponentType, forwardRef } from "preact/compat";
-import { useCallback, useMemo, useRef } from "preact/hooks";
+import { useSignal } from '@preact/signals';
+import { JSX } from 'preact';
+import { ChangeEvent, ComponentType, forwardRef } from 'preact/compat';
+import { useCallback, useMemo, useRef } from 'preact/hooks';
 
 type HTMLInputTypeProp = HTMLInputElement['type'];
 
@@ -20,28 +20,38 @@ interface useFormFieldOptions<TType extends HTMLInputTypeProp> {
    * Initial value for the field.
    */
   defaultValue?: InputDataType<TType>;
-  
+
   /**
    * Custom element to use instead of the default `input` element.  This can be a string representing a native element or a custom component.
    */
   element?: keyof JSX.IntrinsicElements | ComponentType<any>;
 }
 
-type InputDataType<TType extends HTMLInputTypeProp> = 
-  TType extends 'number' ? number :
-  TType extends 'checkbox' ? boolean :
-  TType extends 'date' ? Date :
-  TType extends 'datetime-local' ? Date :
-  TType extends 'time' ? Date :
-  TType extends 'month' ? Date :
-  TType extends 'week' ? Date :
-  TType extends 'file' ? File[] :
-  string;
+type InputDataType<TType extends HTMLInputTypeProp> = TType extends 'number'
+  ? number
+  : TType extends 'checkbox'
+  ? boolean
+  : TType extends 'date'
+  ? Date
+  : TType extends 'datetime-local'
+  ? Date
+  : TType extends 'time'
+  ? Date
+  : TType extends 'month'
+  ? Date
+  : TType extends 'week'
+  ? Date
+  : TType extends 'file'
+  ? File[]
+  : string;
 
-export function createInputValueProps(type: HTMLInputTypeProp, value: any): Record<string, any> {
+export function createInputValueProps(
+  type: HTMLInputTypeProp,
+  value: any
+): Record<string, any> {
   const props: Record<string, any> = {};
 
-  switch(type) {
+  switch (type) {
     case 'checkbox': {
       props.defaultChecked = value === true;
       props.checked = value === true;
@@ -77,7 +87,13 @@ export function getInitialValue<TType extends HTMLInputTypeProp>(type: TType) {
     return 0 as InputDataType<TType>;
   } else if (type === 'checkbox') {
     return false as InputDataType<TType>;
-  } else if (type === 'date' || type === 'datetime-local' || type === 'time' || type === 'month' || type === 'week') {
+  } else if (
+    type === 'date' ||
+    type === 'datetime-local' ||
+    type === 'time' ||
+    type === 'month' ||
+    type === 'week'
+  ) {
     return new Date() as InputDataType<TType>;
   } else if (type === 'file') {
     return [] as File[] as InputDataType<TType>;
@@ -86,10 +102,13 @@ export function getInitialValue<TType extends HTMLInputTypeProp>(type: TType) {
   }
 }
 
-export function parseChangeEventValue<TType extends HTMLInputTypeProp>(type: TType, event: Event) {
+export function parseChangeEventValue<TType extends HTMLInputTypeProp>(
+  type: TType,
+  event: Event
+) {
   const target = event.target as HTMLInputElement;
 
-  switch(type) {
+  switch (type) {
     case 'number': {
       return Number(target.value);
     }
@@ -114,16 +133,20 @@ export function parseChangeEventValue<TType extends HTMLInputTypeProp>(type: TTy
   }
 }
 
-export function toJson<TType extends HTMLInputTypeProp>(type: TType, name: string, value: InputDataType<TType>) {
+export function toJson<TType extends HTMLInputTypeProp>(
+  type: TType,
+  name: string,
+  value: InputDataType<TType>
+) {
   if (type === 'file') {
-    return ({
-      [name]: Array.from(value as File[]).map((file) => file.name)
-    })
+    return {
+      [name]: Array.from(value as File[]).map((file) => file.name),
+    };
   }
 
-  return ({
-    [name]: value
-  });
+  return {
+    [name]: value,
+  };
 }
 
 /**
@@ -251,7 +274,9 @@ export function useFormField<TType extends HTMLInputElement['type']>(
   type: TType = 'text' as TType,
   options?: useFormFieldOptions<TType>
 ) {
-  const data = useSignal<InputDataType<TType>>(options?.defaultValue ?? getInitialValue(type));
+  const data = useSignal<InputDataType<TType>>(
+    options?.defaultValue ?? getInitialValue(type)
+  );
   const inputRef = useRef<HTMLInputElement>(null);
 
   const reset = useCallback(() => {
@@ -260,23 +285,25 @@ export function useFormField<TType extends HTMLInputElement['type']>(
 
   const ElementComponent = options?.element ?? 'input';
 
-  const Input = useMemo(() =>
-    forwardRef<HTMLInputElement, Record<string, any>>((props, ref) => {
-      return (
-        <ElementComponent
-          {...props}
-          ref={ref}
-          type={type}
-          name={name}
-          id={options?.id ?? name}
-          {...createInputValueProps(type, data.value)}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => {
-            data.value = e.currentTarget.value as InputDataType<TType>;
-          }}
-        />
-      )
-    })
-  , [type, name, options?.id, options?.element, data]);
+  const Input = useMemo(
+    () =>
+      forwardRef<HTMLInputElement, Record<string, any>>((props, ref) => {
+        return (
+          <ElementComponent
+            {...props}
+            ref={ref}
+            type={type}
+            name={name}
+            id={options?.id ?? name}
+            {...createInputValueProps(type, data.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              data.value = e.currentTarget.value as InputDataType<TType>;
+            }}
+          />
+        );
+      }),
+    [type, name, options?.id, options?.element, data]
+  );
 
   return {
     element: Input,
@@ -287,6 +314,6 @@ export function useFormField<TType extends HTMLInputElement['type']>(
     id: options?.id ?? name,
     error: options?.error,
     ref: inputRef,
-    toJSON: () => toJson(type, name, data.value)
+    toJSON: () => toJson(type, name, data.value),
   };
 }
