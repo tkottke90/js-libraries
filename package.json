@@ -38,6 +38,8 @@
     "packages/*"
   ],
   "dependencies": {
+    "@preact/signals": "^2.5.1",
+    "preact": "^10.25.1",
     "winston": "^3.19.0",
     "winston-loki": "^6.1.3"
   }
