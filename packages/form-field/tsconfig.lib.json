@@ -18,7 +18,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
   },
-  "include": ["src/**/*.ts", "src/lib/form-field.tsx"],
+  "include": ["src/**/*.ts", "src/lib/form-field.tsx", "src/lib/form-field.spec.tsx"],
   "references": [],
   "exclude": [
     "vite.config.ts",
