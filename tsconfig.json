@@ -8,6 +8,9 @@
     },
     {
       "path": "./packages/js-errors"
+    },
+    {
+      "path": "./packages/form-field"
     }
   ]
 }

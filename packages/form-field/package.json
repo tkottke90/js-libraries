@@ -1,0 +1,42 @@
+{
+  "name": "@tkottke90/form-field",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "options": {
+          "outputPath": "packages/form-field/dist",
+          "main": "packages/form-field/src/index.ts",
+          "tsConfig": "packages/form-field/tsconfig.lib.json",
+          "format": [
+            "esm"
+          ],
+          "declarationRootDir": "packages/form-field/src"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@preact/signals": "*",
+    "preact": "*",
+    "vitest": "*"
+  }
+}
