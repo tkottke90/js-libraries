@@ -37,8 +37,6 @@
   "dependencies": {
     "@preact/signals": "*",
     "preact": "*",
-    "vitest": "*",
-    "@testing-library/preact": "*",
-    "@testing-library/preact-hooks": "*"
+    "vitest": "*"
   }
 }
