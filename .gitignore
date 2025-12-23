@@ -42,3 +42,6 @@ Thumbs.db
 .nx/workspace-data
 
 vitest.config.*.timestamp*
+
+# Documentation
+PR_DESCRIPTION.md

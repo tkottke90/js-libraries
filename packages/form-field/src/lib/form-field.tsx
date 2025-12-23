@@ -12,11 +12,6 @@ interface useFormFieldInputOptions<TType extends HTMLInputTypeProp> {
   id?: string;
 
   /**
-   * Error message to display to the user when the field is invalid.
-   */
-  error?: string;
-
-  /**
    * Initial value for the field.
    */
   defaultValue?: InputDataType<TType>;
@@ -116,7 +111,10 @@ export function createInputValueProps(
   return props;
 }
 
-export function getInitialValue<TType extends HTMLInputTypeProp>(type: TType, options?: useFormFieldOptions<TType>) {
+export function getInitialValue<TType extends HTMLInputTypeProp>(
+  type: TType,
+  options?: useFormFieldOptions<TType>
+) {
   if (type === 'number') {
     return 0 as InputDataType<TType>;
   } else if (type === 'checkbox') {
@@ -132,7 +130,9 @@ export function getInitialValue<TType extends HTMLInputTypeProp>(type: TType, op
   } else if (type === 'file') {
     return [] as File[] as InputDataType<TType>;
   } else if (type === 'select') {
-    return (options as useFormFieldSelectOptions<TType>)?.multiple ? [] : '' as InputDataType<TType>;
+    return (options as useFormFieldSelectOptions<TType>)?.multiple
+      ? []
+      : ('' as InputDataType<TType>);
   } else {
     return '' as InputDataType<TType>;
   }
@@ -297,12 +297,18 @@ export function useFormField<TType extends HTMLInputElement['type']>(
   options?: useFormFieldOptions<TType>
 ) {
   const data = useSignal<InputDataType<TType>>(
-    (options?.defaultValue !== undefined ? options.defaultValue : getInitialValue(type, options)) as InputDataType<TType>
+    (options?.defaultValue !== undefined
+      ? options.defaultValue
+      : getInitialValue(type, options)) as InputDataType<TType>
   );
   const inputRef = useRef<HTMLInputElement>(null);
 
   const reset = useCallback(() => {
-    data.value = (options?.defaultValue !== undefined ? options.defaultValue : getInitialValue(type, options)) as InputDataType<TType>;
+    data.value = (
+      options?.defaultValue !== undefined
+        ? options.defaultValue
+        : getInitialValue(type, options)
+    ) as InputDataType<TType>;
   }, [type, options]);
 
   const ElementComponent = options?.element ?? 'input';
@@ -357,11 +363,6 @@ export function useFormField<TType extends HTMLInputElement['type']>(
      * The id of the field.  This is either the `options.id` parameter or the `name` parameter if no custom id was provided.
      */
     id: options?.id ?? name,
-
-    /**
-     * The error message provided in the `options.error` parameter.
-     */
-    error: options?.error,
 
     /**
      * A ref which can be passed to the `element` to gain access to the underlying input element.

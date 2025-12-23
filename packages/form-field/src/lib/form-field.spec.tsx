@@ -80,19 +80,6 @@ describe('useFormField', () => {
       expect(result.current.id).toBe('custom-username-id');
     });
 
-    it('should set error when provided in options', () => {
-      // Arrange
-      const errorMessage = 'Username is required';
-
-      // Act
-      const { result } = renderHook(() =>
-        useFormField('username', 'text', { error: errorMessage })
-      );
-
-      // Assert
-      expect(result.current.error).toBe('Username is required');
-    });
-
     it('should initialize data signal with correct initial value', () => {
       // Act
       const { result } = renderHook(() =>
@@ -154,16 +141,6 @@ describe('useFormField', () => {
 
       // Assert
       expect(result.current.id).toBe('username');
-    });
-
-    it('should return error property', () => {
-      // Act
-      const { result } = renderHook(() =>
-        useFormField('username', 'text', { error: 'Required' })
-      );
-
-      // Assert
-      expect(result.current.error).toBe('Required');
     });
 
     it('should return ref object', () => {
@@ -1168,7 +1145,7 @@ describe('useFormField', () => {
         const { result } = renderHook(() =>
           useFormField('country', 'select', {
             element: 'select',
-            defaultValue: 'US'
+            defaultValue: 'US',
           })
         );
 
@@ -1964,7 +1941,10 @@ describe('getInitialValue', () => {
 
   it('should return empty array for select type with multiple', () => {
     // Act
-    const result = getInitialValue('select', { element: 'select', multiple: true });
+    const result = getInitialValue('select', {
+      element: 'select',
+      multiple: true,
+    });
 
     // Assert
     expect(result).toEqual([]);
@@ -1976,7 +1956,7 @@ describe('parseChangeEventValue', () => {
   describe('text type', () => {
     it('should return string value from event target', () => {
       // Arrange
-      const mockEvent = { target: { value: 'test value' } } as Event;
+      const mockEvent = { target: { value: 'test value' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('text', mockEvent);
@@ -1987,7 +1967,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle empty string', () => {
       // Arrange
-      const mockEvent = { target: { value: '' } } as Event;
+      const mockEvent = { target: { value: '' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('text', mockEvent);
@@ -1998,7 +1978,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle whitespace', () => {
       // Arrange
-      const mockEvent = { target: { value: '  spaces  ' } } as Event;
+      const mockEvent = { target: { value: '  spaces  ' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('text', mockEvent);
@@ -2011,7 +1991,7 @@ describe('parseChangeEventValue', () => {
   describe('number type', () => {
     it('should parse string to number', () => {
       // Arrange
-      const mockEvent = { target: { value: '42' } } as Event;
+      const mockEvent = { target: { value: '42' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('number', mockEvent);
@@ -2022,7 +2002,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle integer values', () => {
       // Arrange
-      const mockEvent = { target: { value: '100' } } as Event;
+      const mockEvent = { target: { value: '100' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('number', mockEvent);
@@ -2033,7 +2013,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle decimal values', () => {
       // Arrange
-      const mockEvent = { target: { value: '3.14' } } as Event;
+      const mockEvent = { target: { value: '3.14' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('number', mockEvent);
@@ -2044,7 +2024,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle zero', () => {
       // Arrange
-      const mockEvent = { target: { value: '0' } } as Event;
+      const mockEvent = { target: { value: '0' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('number', mockEvent);
@@ -2055,7 +2035,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle negative numbers', () => {
       // Arrange
-      const mockEvent = { target: { value: '-25' } } as Event;
+      const mockEvent = { target: { value: '-25' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('number', mockEvent);
@@ -2066,7 +2046,9 @@ describe('parseChangeEventValue', () => {
 
     it('should return NaN for invalid input', () => {
       // Arrange
-      const mockEvent = { target: { value: 'not a number' } } as Event;
+      const mockEvent = {
+        target: { value: 'not a number' },
+      } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('number', mockEvent);
@@ -2079,7 +2061,7 @@ describe('parseChangeEventValue', () => {
   describe('checkbox type', () => {
     it('should return checked property from event target', () => {
       // Arrange
-      const mockEvent = { target: { checked: true } } as Event;
+      const mockEvent = { target: { checked: true } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('checkbox', mockEvent);
@@ -2090,7 +2072,7 @@ describe('parseChangeEventValue', () => {
 
     it('should return true when checked', () => {
       // Arrange
-      const mockEvent = { target: { checked: true } } as Event;
+      const mockEvent = { target: { checked: true } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('checkbox', mockEvent);
@@ -2101,7 +2083,7 @@ describe('parseChangeEventValue', () => {
 
     it('should return false when unchecked', () => {
       // Arrange
-      const mockEvent = { target: { checked: false } } as Event;
+      const mockEvent = { target: { checked: false } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('checkbox', mockEvent);
@@ -2114,7 +2096,7 @@ describe('parseChangeEventValue', () => {
   describe('date type', () => {
     it('should parse string to Date object', () => {
       // Arrange
-      const mockEvent = { target: { value: '2024-01-15' } } as Event;
+      const mockEvent = { target: { value: '2024-01-15' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('date', mockEvent);
@@ -2125,7 +2107,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle valid date strings', () => {
       // Arrange
-      const mockEvent = { target: { value: '2024-12-25' } } as Event;
+      const mockEvent = { target: { value: '2024-12-25' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('date', mockEvent);
@@ -2138,7 +2120,7 @@ describe('parseChangeEventValue', () => {
     it('should create Date from ISO string', () => {
       // Arrange
       const isoString = '2024-06-15T00:00:00.000Z';
-      const mockEvent = { target: { value: isoString } } as Event;
+      const mockEvent = { target: { value: isoString } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('date', mockEvent);
@@ -2151,7 +2133,9 @@ describe('parseChangeEventValue', () => {
   describe('datetime-local type', () => {
     it('should parse string to Date object', () => {
       // Arrange
-      const mockEvent = { target: { value: '2024-01-15T14:30' } } as Event;
+      const mockEvent = {
+        target: { value: '2024-01-15T14:30' },
+      } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('datetime-local', mockEvent);
@@ -2162,7 +2146,9 @@ describe('parseChangeEventValue', () => {
 
     it('should handle datetime-local format', () => {
       // Arrange
-      const mockEvent = { target: { value: '2024-12-25T18:45' } } as Event;
+      const mockEvent = {
+        target: { value: '2024-12-25T18:45' },
+      } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('datetime-local', mockEvent);
@@ -2175,7 +2161,7 @@ describe('parseChangeEventValue', () => {
   describe('time type', () => {
     it('should parse string to Date object', () => {
       // Arrange
-      const mockEvent = { target: { value: '14:30' } } as Event;
+      const mockEvent = { target: { value: '14:30' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('time', mockEvent);
@@ -2186,7 +2172,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle time format', () => {
       // Arrange
-      const mockEvent = { target: { value: '09:15' } } as Event;
+      const mockEvent = { target: { value: '09:15' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('time', mockEvent);
@@ -2199,7 +2185,7 @@ describe('parseChangeEventValue', () => {
   describe('month type', () => {
     it('should parse string to Date object', () => {
       // Arrange
-      const mockEvent = { target: { value: '2024-06' } } as Event;
+      const mockEvent = { target: { value: '2024-06' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('month', mockEvent);
@@ -2210,7 +2196,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle month format', () => {
       // Arrange
-      const mockEvent = { target: { value: '2024-12' } } as Event;
+      const mockEvent = { target: { value: '2024-12' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('month', mockEvent);
@@ -2223,7 +2209,7 @@ describe('parseChangeEventValue', () => {
   describe('week type', () => {
     it('should parse string to Date object', () => {
       // Arrange
-      const mockEvent = { target: { value: '2024-W25' } } as Event;
+      const mockEvent = { target: { value: '2024-W25' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('week', mockEvent);
@@ -2234,7 +2220,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle week format', () => {
       // Arrange
-      const mockEvent = { target: { value: '2024-W01' } } as Event;
+      const mockEvent = { target: { value: '2024-W01' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('week', mockEvent);
@@ -2248,7 +2234,7 @@ describe('parseChangeEventValue', () => {
     it('should return files from event target', () => {
       // Arrange
       const mockFiles = [new File(['content'], 'test.txt')];
-      const mockEvent = { target: { files: mockFiles } } as Event;
+      const mockEvent = { target: { files: mockFiles } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('file', mockEvent);
@@ -2263,7 +2249,7 @@ describe('parseChangeEventValue', () => {
         new File(['content'], 'file1.txt'),
         new File(['content2'], 'file2.txt'),
       ];
-      const mockEvent = { target: { files: mockFiles } } as Event;
+      const mockEvent = { target: { files: mockFiles } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('file', mockEvent);
@@ -2275,7 +2261,7 @@ describe('parseChangeEventValue', () => {
     it('should handle empty file selection', () => {
       // Arrange
       const mockFiles: File[] = [];
-      const mockEvent = { target: { files: mockFiles } } as Event;
+      const mockEvent = { target: { files: mockFiles } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('file', mockEvent);
@@ -2291,7 +2277,7 @@ describe('parseChangeEventValue', () => {
         new File(['content2'], 'file2.txt'),
         new File(['content3'], 'file3.txt'),
       ];
-      const mockEvent = { target: { files: mockFiles } } as Event;
+      const mockEvent = { target: { files: mockFiles } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('file', mockEvent);
@@ -2304,7 +2290,9 @@ describe('parseChangeEventValue', () => {
   describe('other input types', () => {
     it('should handle email type as text', () => {
       // Arrange
-      const mockEvent = { target: { value: 'test@example.com' } } as Event;
+      const mockEvent = {
+        target: { value: 'test@example.com' },
+      } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('email', mockEvent);
@@ -2315,7 +2303,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle password type as text', () => {
       // Arrange
-      const mockEvent = { target: { value: 'secret123' } } as Event;
+      const mockEvent = { target: { value: 'secret123' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('password', mockEvent);
@@ -2326,7 +2314,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle tel type as text', () => {
       // Arrange
-      const mockEvent = { target: { value: '555-1234' } } as Event;
+      const mockEvent = { target: { value: '555-1234' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('tel', mockEvent);
@@ -2337,7 +2325,9 @@ describe('parseChangeEventValue', () => {
 
     it('should handle url type as text', () => {
       // Arrange
-      const mockEvent = { target: { value: 'https://example.com' } } as Event;
+      const mockEvent = {
+        target: { value: 'https://example.com' },
+      } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('url', mockEvent);
@@ -2350,7 +2340,7 @@ describe('parseChangeEventValue', () => {
   describe('select type', () => {
     it('should return string value for single select', () => {
       // Arrange
-      const mockEvent = { target: { value: 'US' } } as Event;
+      const mockEvent = { target: { value: 'US' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('select', mockEvent);
@@ -2361,7 +2351,7 @@ describe('parseChangeEventValue', () => {
 
     it('should handle empty string for single select', () => {
       // Arrange
-      const mockEvent = { target: { value: '' } } as Event;
+      const mockEvent = { target: { value: '' } } as unknown as Event;
 
       // Act
       const result = parseChangeEventValue('select', mockEvent);
