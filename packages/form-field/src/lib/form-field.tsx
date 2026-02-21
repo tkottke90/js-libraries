@@ -83,7 +83,6 @@ export function createInputValueProps(
   switch (type) {
     case 'checkbox': {
       props.defaultChecked = value === true;
-      props.checked = value === true;
       break;
     }
     case 'date':
@@ -92,7 +91,6 @@ export function createInputValueProps(
     case 'month':
     case 'week': {
       props.defaultValue = value.toISOString();
-      props.value = value.toISOString();
       break;
     }
 
@@ -103,7 +101,6 @@ export function createInputValueProps(
 
     default: {
       props.defaultValue = value;
-      props.value = value;
       break;
     }
   }
