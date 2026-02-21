@@ -1,0 +1,45 @@
+{
+  "name": "@tkottke/express-client",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "express-client-init": "./bin/init.mjs"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@tkottke-js-helpers/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "options": {
+          "outputPath": "packages/express-client/dist",
+          "main": "packages/express-client/src/index.ts",
+          "tsConfig": "packages/express-client/tsconfig.lib.json",
+          "format": [
+            "esm"
+          ],
+          "declarationRootDir": "packages/express-client/src"
+        }
+      }
+    }
+  },
+  "peerDependencies": {
+    "@tkottke90/js-errors": "*",
+    "vitest": "*",
+    "zod": "*"
+  }
+}

@@ -1,4 +1,4 @@
-# TkottkeJsHelpers
+# Tkottke Js Helpers
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
@@ -13,7 +13,7 @@
 ## Generate a library
 
 ```sh
-npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
+npx nx g @nx/js:lib packages/express-client --bundler=esbuild --unitTestRunner=vitest --linter=eslint
 ```
 
 ## Run tasks
@@ -36,13 +36,22 @@ These targets are either [inferred automatically](https://nx.dev/concepts/inferr
 
 ## Versioning and releasing
 
-To version and release the library use
+Releases are automated through GitHub Actions when you push a git tag. The release workflow will:
+- Extract package information from the tag
+- Run validation (lint, test, build, typecheck)
+- Publish to NPM
+- Create a GitHub release with changelog
 
-```
-npx nx release
+To release a package:
+
+```sh
+# Tag format: @tkottke90/<package-dir>/v<version>
+# For example:
+git tag @tkottke90/express-client/v1.0.0
+git push origin packages/express-client/v1.0.0
 ```
 
-Pass `--dry-run` to see what would happen without actually releasing the library.
+The GitHub Action expects tags in the format `<package-directory>/v<version>` (e.g., `packages/express-client/v1.0.0`).
 
 [Learn more about Nx release &raquo;](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 

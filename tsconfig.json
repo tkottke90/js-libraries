@@ -11,6 +11,9 @@
     },
     {
       "path": "./packages/form-field"
+    },
+    {
+      "path": "./packages/express-client"
     }
   ]
 }
