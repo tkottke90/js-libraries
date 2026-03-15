@@ -67,6 +67,17 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
 
+      - name: Create Package Tarball
+        id: pack
+        run: |
+          cd ${{needs.extract-package-info.outputs.package-dir}}
+          TARBALL=$(npm pack)
+          # Rename tarball to remove version for easier installation
+          SIMPLE_NAME="${{needs.extract-package-info.outputs.package-name}}.tgz"
+          mv "$TARBALL" "$SIMPLE_NAME"
+          echo "tarball=$SIMPLE_NAME" >> $GITHUB_OUTPUT
+          echo "tarball-path=${{needs.extract-package-info.outputs.package-dir}}/$SIMPLE_NAME" >> $GITHUB_OUTPUT
+
       - name: Extract Changelog
         id: extract-changelog
         uses: ./actions/release-changelog
@@ -87,3 +98,13 @@ jobs:
 
             ## Changes
             ${{ steps.extract-changelog.outputs.changelog-text }}
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-Release.outputs.upload_url }}
+          asset_path: ${{ steps.pack.outputs.tarball-path }}
+          asset_name: ${{ steps.pack.outputs.tarball }}
+          asset_content_type: application/gzip

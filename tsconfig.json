@@ -14,6 +14,9 @@
     },
     {
       "path": "./packages/express-client"
+    },
+    {
+      "path": "./packages/js-date-utils"
     }
   ]
 }

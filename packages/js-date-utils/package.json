@@ -1,0 +1,69 @@
+{
+  "name": "@tkottke90/js-date-utils",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@tkottke-js-helpers/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    }
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "nx:run-commands",
+        "outputs": [
+          "{workspaceRoot}/packages/js-date-utils/dist"
+        ],
+        "options": {
+          "commands": [
+            "nx run js-date-utils:build-esm",
+            "nx run js-date-utils:build-cjs"
+          ],
+          "parallel": false
+        }
+      },
+      "build-esm": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{workspaceRoot}/packages/js-date-utils/dist"
+        ],
+        "options": {
+          "outputPath": "packages/js-date-utils/dist",
+          "main": "packages/js-date-utils/src/index.ts",
+          "tsConfig": "packages/js-date-utils/tsconfig.lib.json",
+          "format": ["esm"],
+          "outputFileName": "index.js",
+          "declarationRootDir": "packages/js-date-utils/src",
+          "deleteOutputPath": true
+        }
+      },
+      "build-cjs": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{workspaceRoot}/packages/js-date-utils/dist"
+        ],
+        "options": {
+          "outputPath": "packages/js-date-utils/dist",
+          "main": "packages/js-date-utils/src/index.ts",
+          "tsConfig": "packages/js-date-utils/tsconfig.lib.json",
+          "format": ["cjs"],
+          "outputFileName": "index.cjs",
+          "generatePackageJson": false,
+          "deleteOutputPath": false
+        }
+      }
+    }
+  }
+}
