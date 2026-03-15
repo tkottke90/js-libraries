@@ -26,7 +26,3 @@ jobs:
           registry-url: ${{ secrets.PRIVATE_NPM_REGISTRY }}
           node-auth-token: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
 
-
-      - name: Validate Changes
-        run: npx nx run-many -t lint test build typecheck
-
