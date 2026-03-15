@@ -5,6 +5,14 @@ type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
 type FunctionSchema<T> = T extends z.ZodTypeAny ? z.infer<T> : never;
 
+type MethodArgs<
+  BodySchema extends z.ZodTypeAny | undefined,
+  QuerySchema extends z.ZodTypeAny | undefined,
+  ParamSchema extends z.ZodTypeAny | undefined
+> = (BodySchema extends z.ZodTypeAny ? { body: z.infer<BodySchema> } : object) &
+  (QuerySchema extends z.ZodTypeAny ? { query: z.infer<QuerySchema> } : object) &
+  (ParamSchema extends z.ZodTypeAny ? { params: z.infer<ParamSchema> } : object);
+
 // Extract the return type from outputProcessor and handle Promise unwrapping
 type OutputProcessorReturnType<T> = T extends (response: Response) => infer R
   ? R extends Promise<infer U>
@@ -15,6 +23,8 @@ type OutputProcessorReturnType<T> = T extends (response: Response) => infer R
 interface ClientMethodOptions<Input extends z.ZodTypeAny | undefined> {
   method: HttpMethod;
   inputSchema?: Input;
+  querySchema?: z.ZodTypeAny;
+  paramSchema?: z.ZodTypeAny;
   acceptedTypes?: string[];
 }
 
@@ -118,7 +128,11 @@ export function createClientMethod<
   outputProcessor?: OutputProcessor
 ): (input: InputType, init?: RequestInit) => Promise<ReturnType> {
   return (input: InputType, init: RequestInit = {}) => {
+    // Setup the request options, including method, headers, and body
     const { headers: customHeaders, ...restInit } = init;
+
+    // If there 
+
     return fetch(path, {
       method: options.method.toUpperCase(),
       headers: {
