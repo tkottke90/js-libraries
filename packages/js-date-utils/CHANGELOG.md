@@ -1,3 +1,13 @@
+## 0.0.3 (2026-03-15)
+
+### 🩹 Fixes
+
+- release tarball creation ([1aee6a7](https://github.com/tkottke90/js-libraries/commit/1aee6a7))
+
+### ❤️ Thank You
+
+- Thomas Kottke @tkottke90
+
 ## 0.0.2 (2026-03-15)
 
 ### 🚀 Features
