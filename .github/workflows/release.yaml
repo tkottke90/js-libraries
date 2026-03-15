@@ -56,6 +56,32 @@ jobs:
           echo "| Package Name | \`${{ needs.extract-package-info.outputs.package-name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Package Version | \`${{ needs.extract-package-info.outputs.package-version }}\` |" >> $GITHUB_STEP_SUMMARY
 
+      - name: Determine npm dist-tag
+        id: determine-tag
+        run: |
+          VERSION="${{ needs.extract-package-info.outputs.package-version }}"
+          
+          # Check if version contains pre-release identifier (e.g., 1.0.0-alpha, 0.0.6-1)
+          if [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+-(.+)$ ]]; then
+            PRERELEASE="${BASH_REMATCH[1]}"
+            
+            # Extract first segment (before dot or dash) as tag name
+            # Examples: "alpha.1" -> "alpha", "beta-test" -> "beta", "1" -> "1"
+            TAG=$(echo "$PRERELEASE" | sed -E 's/^([a-zA-Z]+).*/\1/')
+            
+            # If tag is numeric or empty, use "next" as default
+            if [[ $TAG =~ ^[0-9]+$ ]] || [[ -z "$TAG" ]]; then
+              TAG="next"
+            fi
+            
+            echo "npm-tag=$TAG" >> $GITHUB_OUTPUT
+            echo "📦 Pre-release detected: $VERSION → dist-tag: $TAG" >> $GITHUB_STEP_SUMMARY
+          else
+            # Stable release - use "latest"
+            echo "npm-tag=latest" >> $GITHUB_OUTPUT
+            echo "📦 Stable release detected: $VERSION → dist-tag: latest" >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Validate Changes
         run: npx nx run ${{needs.extract-package-info.outputs.package-dir}}:lint && npx nx run ${{needs.extract-package-info.outputs.package-dir}}:test && npx nx run ${{needs.extract-package-info.outputs.package-dir}}:build && npx nx run ${{needs.extract-package-info.outputs.package-dir}}:typecheck
 
@@ -63,7 +89,7 @@ jobs:
         run: |
           [ -d "${{needs.extract-package-info.outputs.package-dir}}/dist" ] || { echo "Missing dist folder: ${{needs.extract-package-info.outputs.package-dir}}/dist"; exit 1; }
 
-          npm publish -w ${{needs.extract-package-info.outputs.package-dir}} --tag ${{ needs.extract-package-info.outputs.package-version }}
+          npm publish -w ${{needs.extract-package-info.outputs.package-dir}} --tag ${{ steps.determine-tag.outputs.npm-tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
 
