@@ -73,7 +73,8 @@ jobs:
           cd ${{needs.extract-package-info.outputs.package-dir}}
           TARBALL=$(npm pack)
           # Rename tarball to remove version for easier installation
-          SIMPLE_NAME="${{needs.extract-package-info.outputs.package-name}}.tgz"
+          # Replace @ and / to make it filesystem-safe
+          SIMPLE_NAME=$(echo "${{needs.extract-package-info.outputs.package-name}}" | sed 's/@//g' | sed 's/\//-/g').tgz
           mv "$TARBALL" "$SIMPLE_NAME"
           echo "tarball=$SIMPLE_NAME" >> $GITHUB_OUTPUT
           echo "tarball-path=${{needs.extract-package-info.outputs.package-dir}}/$SIMPLE_NAME" >> $GITHUB_OUTPUT

@@ -15,13 +15,13 @@ npm install @tkottke90/js-date-utils
 Download the tarball from the [GitHub Releases](https://github.com/tkottke90/js-helper-packages/releases) page and install it locally:
 
 ```bash
-npm install /path/to/@tkottke90-js-date-utils.tgz
+npm install /path/to/tkottke90-js-date-utils.tgz
 ```
 
 Or install directly from a release URL:
 
 ```bash
-npm install https://github.com/tkottke90/js-helper-packages/releases/download/[tag]/@tkottke90-js-date-utils.tgz
+npm install https://github.com/tkottke90/js-helper-packages/releases/download/[tag]/tkottke90-js-date-utils.tgz
 ```
 
 ## Usage
