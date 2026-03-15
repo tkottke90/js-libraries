@@ -1,3 +1,7 @@
+## 0.0.5 (2026-03-15)
+
+This was a version bump only for @tkottke90/js-date-utils to align it with other projects, there were no code changes.
+
 ## 0.0.4 (2026-03-15)
 
 This was a version bump only for @tkottke90/js-date-utils to align it with other projects, there were no code changes.
