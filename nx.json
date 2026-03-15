@@ -54,7 +54,7 @@
   "release": {
     "projectsRelationship": "independent",
     "version": {
-      "preVersionCommand": "npx nx run-many -t lint build",
+      "preVersionCommand": "npx nx run-many -t lint build --exclude express-client",
       "updateDependents": "never"
     },
     "git": {
@@ -69,6 +69,6 @@
     "changelog": {
       "projectChangelogs": true
     },
-    "projects": ["packages/*"]
+    "projects": ["packages/js-date-utils", "packages/js-errors", "packages/logger"]
   }
 }
