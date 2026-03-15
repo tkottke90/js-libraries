@@ -1,6 +1,6 @@
 {
   "name": "@tkottke90/js-date-utils",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "type": "module",
   "main": "./dist/index.cjs",
@@ -43,7 +43,9 @@
           "outputPath": "packages/js-date-utils/dist",
           "main": "packages/js-date-utils/src/index.ts",
           "tsConfig": "packages/js-date-utils/tsconfig.lib.json",
-          "format": ["esm"],
+          "format": [
+            "esm"
+          ],
           "outputFileName": "index.js",
           "declarationRootDir": "packages/js-date-utils/src",
           "deleteOutputPath": true
@@ -58,12 +60,17 @@
           "outputPath": "packages/js-date-utils/dist",
           "main": "packages/js-date-utils/src/index.ts",
           "tsConfig": "packages/js-date-utils/tsconfig.lib.json",
-          "format": ["cjs"],
+          "format": [
+            "cjs"
+          ],
           "outputFileName": "index.cjs",
           "generatePackageJson": false,
           "deleteOutputPath": false
         }
       }
     }
+  },
+  "dependencies": {
+    "vitest": "*"
   }
 }
