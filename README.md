@@ -36,22 +36,69 @@ These targets are either [inferred automatically](https://nx.dev/concepts/inferr
 
 ## Versioning and releasing
 
-Releases are automated through GitHub Actions when you push a git tag. The release workflow will:
-- Extract package information from the tag
-- Run validation (lint, test, build, typecheck)
-- Publish to NPM
-- Create a GitHub release with changelog
+Releases are managed using Nx Release, which automates version bumping, changelog generation, and git tag creation. When you push a git tag, GitHub Actions automatically publishes the package to npm.
 
-To release a package:
+### Creating a Release
+
+Use `npx nx release` to create a new release for specific packages:
 
 ```sh
-# Tag format: @tkottke90/<package-dir>/v<version>
-# For example:
-git tag @tkottke90/express-client/v1.0.0
-git push origin packages/express-client/v1.0.0
+# Release a specific package with interactive version selection
+npx nx release --projects=logger
+
+# Specify version bump type for a specific package
+npx nx release --projects=js-errors --version=patch
+npx nx release --projects=logger --version=minor
+npx nx release --projects=js-date-utils --version=major
+
+# Release multiple packages at once
+npx nx release --projects=logger,js-errors --version=patch
+
+# Create a pre-release (see below for details)
+npx nx release --projects=form-field --version=prerelease --preid=alpha
 ```
 
-The GitHub Action expects tags in the format `<package-directory>/v<version>` (e.g., `packages/express-client/v1.0.0`).
+This command will:
+1. Prompt you to select which packages to release
+2. Update version numbers in `package.json`
+3. Update `CHANGELOG.md` files
+4. Create and push git tags in the format `@scope/package-name/v1.0.0`
+5. Trigger the GitHub Actions release workflow
+
+### Release Workflow
+
+When a git tag is pushed (format: `@scope/package-name/v*` or `package-name/v*`), GitHub Actions will:
+- Extract package information from the tag
+- Run validation (lint, test, build, typecheck)
+- Publish to npm with the appropriate dist-tag
+- Create a GitHub release with changelog
+- Upload package tarball as release asset
+
+### Stable vs Pre-release Versions
+
+The workflow automatically determines the npm dist-tag based on your version format:
+
+**Stable releases** (e.g., `1.0.0`, `0.5.2`):
+```sh
+npx nx release --projects=logger --version=patch  # or major/minor
+```
+- Published with `--tag latest` on npm
+- Becomes the default installation version
+
+**Named pre-releases** (e.g., `1.0.0-alpha`, `1.0.0-beta.1`):
+```sh
+npx nx release --projects=form-field --version=prerelease --preid=alpha
+npx nx release --projects=express-client --version=prerelease --preid=beta
+```
+- Published with `--tag alpha` or `--tag beta` on npm
+- Users must explicitly install: `npm install package-name@alpha`
+
+**Numeric pre-releases** (e.g., `0.0.6-1`):
+```sh
+npx nx release --projects=js-date-utils --version=0.0.6-1
+```
+- Published with `--tag next` on npm
+- Users must explicitly install: `npm install package-name@next`
 
 [Learn more about Nx release &raquo;](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
