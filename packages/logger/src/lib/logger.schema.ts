@@ -18,18 +18,29 @@ export const GrafanaLokiConfigSchema = z.object({
     .describe(
       'Grafana Loki host URL. Falls back to LOGGER_GRAFANA_URL env var if omitted.'
     ),
-  level: z.string().optional().describe('Override log level for the Grafana transport.'),
+  level: z.enum(defaultLevels).optional().describe('Override log level for the Grafana transport.'),
 });
 
-export const LoggerConfigSchema = z.object({
-  level: z
-    .enum(defaultLevels)
-    .default('info')
-    .describe('Minimum log level for the logger instance.'),
-  grafana: GrafanaLokiConfigSchema.optional().describe(
-    'When provided, a Grafana Loki transport will be added to the logger.'
-  ),
-});
+export const LoggerConfigSchema = z
+  .object({
+    level: z
+      .enum(defaultLevels)
+      .default('info')
+      .describe('Minimum log level for the logger instance.'),
+    grafana: GrafanaLokiConfigSchema.optional().describe(
+      'When provided, a Grafana Loki transport will be added to the logger.'
+    ),
+  })
+  .superRefine((data, ctx) => {
+    if (data.grafana !== undefined && !data.grafana.url && !process.env.LOGGER_GRAFANA_URL) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Grafana URL must be provided either in grafana.url or the LOGGER_GRAFANA_URL environment variable',
+        path: ['grafana', 'url'],
+      });
+    }
+  });
 
 export type GrafanaLokiConfig = z.infer<typeof GrafanaLokiConfigSchema>;
 export type LoggerConfig = z.infer<typeof LoggerConfigSchema>;

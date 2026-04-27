@@ -57,7 +57,7 @@ const config = LoggerConfigSchema.parse(rawConfig);
 | Field   | Type              | Description                                                                       |
 |---------|-------------------|-----------------------------------------------------------------------------------|
 | `url`   | `string` (optional) | Grafana Loki host URL. Falls back to `LOGGER_GRAFANA_URL` env var if omitted.   |
-| `level` | `string` (optional) | Override the log level for the Grafana Loki transport specifically.              |
+| `level` | `'foobar' \| 'error' \| 'warn' \| 'notify' \| 'info' \| 'event' \| 'debug'` (optional) | Override the log level for the Grafana Loki transport specifically. |
 
 ```ts
 import { GrafanaLokiConfigSchema } from '@tkottke90/logger';
@@ -82,7 +82,7 @@ configureFromSchema('my-app', {
 });
 ```
 
-A `ZodError` is thrown if the config is invalid.
+A `ZodError` is thrown if the config is invalid (including when `grafana` is provided but no URL can be resolved — i.e., `grafana.url` is absent and `LOGGER_GRAFANA_URL` is not set).
 
 ### Get the logger
 

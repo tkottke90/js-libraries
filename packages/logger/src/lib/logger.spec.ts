@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import winston, { Logger } from 'winston';
+import { ZodError } from 'zod';
 import { InvalidGrafanaConfig } from './errors.js';
 import {
   addErrorFileLogger,
@@ -289,7 +290,7 @@ describe('Logger Module', () => {
     it('should throw ZodError for an invalid level value', () => {
       expect(() =>
         configureFromSchema('test-app', { level: 'invalid-level' }, testLogger)
-      ).toThrow();
+      ).toThrow(ZodError);
     });
 
     it('should throw ZodError when grafana.url is not a valid URL', () => {
@@ -299,7 +300,22 @@ describe('Logger Module', () => {
           { level: 'info', grafana: { url: 'not-a-url' } },
           testLogger
         )
-      ).toThrow();
+      ).toThrow(ZodError);
+    });
+
+    it('should throw ZodError when grafana is provided without a URL and no env var is set', () => {
+      delete process.env.LOGGER_GRAFANA_URL;
+      expect(() =>
+        configureFromSchema('test-app', { grafana: {} }, testLogger)
+      ).toThrow(ZodError);
+    });
+
+    it('should succeed when grafana is provided without url but LOGGER_GRAFANA_URL env var is set', () => {
+      process.env.LOGGER_GRAFANA_URL = 'http://localhost:3100';
+      expect(() =>
+        configureFromSchema('test-app', { grafana: {} }, testLogger)
+      ).not.toThrow();
+      delete process.env.LOGGER_GRAFANA_URL;
     });
 
     it('should add a Grafana transport when grafana config is present', () => {

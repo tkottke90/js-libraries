@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GrafanaLokiConfigSchema, LoggerConfigSchema } from './logger.schema.js';
+import { GrafanaLokiConfigSchema, LoggerConfigSchema, defaultLevels } from './logger.schema.js';
 
 describe('LoggerConfigSchema', () => {
   it('should parse a minimal valid config', () => {
@@ -13,8 +13,7 @@ describe('LoggerConfigSchema', () => {
   });
 
   it('should accept all valid level values', () => {
-    const levels = ['foobar', 'error', 'warn', 'notify', 'info', 'event', 'debug'] as const;
-    for (const level of levels) {
+    for (const level of defaultLevels) {
       expect(() => LoggerConfigSchema.parse({ level })).not.toThrow();
     }
   });
@@ -41,6 +40,17 @@ describe('LoggerConfigSchema', () => {
       LoggerConfigSchema.parse({ level: 'info', grafana: { url: 'not-a-url' } })
     ).toThrow();
   });
+
+  it('should throw when grafana is provided without url and LOGGER_GRAFANA_URL is not set', () => {
+    delete process.env.LOGGER_GRAFANA_URL;
+    expect(() => LoggerConfigSchema.parse({ grafana: {} })).toThrow();
+  });
+
+  it('should pass when grafana is provided without url but LOGGER_GRAFANA_URL env var is set', () => {
+    process.env.LOGGER_GRAFANA_URL = 'http://localhost:3100';
+    expect(() => LoggerConfigSchema.parse({ grafana: {} })).not.toThrow();
+    delete process.env.LOGGER_GRAFANA_URL;
+  });
 });
 
 describe('GrafanaLokiConfigSchema', () => {
@@ -66,5 +76,11 @@ describe('GrafanaLokiConfigSchema', () => {
 
   it('should throw for an invalid URL', () => {
     expect(() => GrafanaLokiConfigSchema.parse({ url: 'not-a-url' })).toThrow();
+  });
+
+  it('should throw for an invalid level string', () => {
+    expect(() =>
+      GrafanaLokiConfigSchema.parse({ url: 'http://localhost:3100', level: 'verbose' })
+    ).toThrow();
   });
 });
