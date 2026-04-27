@@ -1,24 +1,20 @@
 import winston, { Logger, LoggerOptions, format, transports } from 'winston';
 import LokiTransport from 'winston-loki';
 import { InvalidGrafanaConfig } from './errors.js';
+import { LoggerConfig, LoggerConfigSchema, customLevels, levelColors } from './logger.schema.js';
 const { combine, timestamp, json, errors, simple } = format;
 
-const LoggerInstance = winston.createLogger();
+// Register colors for the custom levels so colorized transports work correctly
+winston.addColors(levelColors);
+
+const LoggerInstance = winston.createLogger({
+  levels: customLevels,
+});
 
 export interface LoggerInstanceConfig {
   level: LoggerOptions['level'];
-  levels: LoggerOptions['levels'];
+  levels?: LoggerOptions['levels'];
 }
-
-export const defaultLevels = [
-  'foobar',
-  'error',
-  'warn',
-  'notify',
-  'info',
-  'event',
-  'debug',
-] as const;
 
 export function addErrorFileLogger(
   filename: string,
@@ -93,6 +89,7 @@ export function createChildLogger(
 export function configure(config: LoggerInstanceConfig) {
   LoggerInstance.configure({
     ...config,
+    levels: config.levels ?? customLevels,
   });
 }
 
@@ -104,7 +101,21 @@ export function updateLogLevel(
   newLevel: string,
   logger: Logger = LoggerInstance
 ) {
-  logger.configure({
-    level: newLevel,
-  });
+  logger.level = newLevel;
+}
+
+export function configureFromSchema(
+  appName: string,
+  raw: unknown,
+  logger: Logger = LoggerInstance
+): LoggerConfig {
+  const config = LoggerConfigSchema.parse(raw);
+
+  logger.level = config.level;
+
+  if (config.grafana) {
+    addGrafanaLokiLogger(appName, config.grafana, logger);
+  }
+
+  return config;
 }

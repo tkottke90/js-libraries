@@ -37,6 +37,7 @@
     "vitest": "*",
     "winston": "*",
     "winston-loki": "*",
+    "zod": "*",
     "@tkottke90/js-errors": "*"
   }
 }

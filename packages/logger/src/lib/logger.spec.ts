@@ -1,24 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import winston, { Logger } from 'winston';
+import { ZodError } from 'zod';
 import { InvalidGrafanaConfig } from './errors.js';
 import {
   addErrorFileLogger,
   addGrafanaLokiLogger,
   addJsonLinesFileLogger,
   configure,
+  configureFromSchema,
   createChildLogger,
   getLogger,
   LoggerInstanceConfig,
   updateLogLevel,
 } from './logger.js';
+import { customLevels } from './logger.schema.js';
 
 describe('Logger Module', () => {
   let testLogger: Logger;
 
   beforeEach(() => {
-    // Create a fresh logger instance for each test
+    // Create a fresh logger instance for each test, using custom levels so
+    // level operations behave the same as on the module-level LoggerInstance
     testLogger = winston.createLogger({
+      levels: customLevels,
       level: 'info',
       format: winston.format.json(),
     });
@@ -103,6 +108,11 @@ describe('Logger Module', () => {
       const logger2 = getLogger();
       expect(logger1).toBe(logger2);
     });
+
+    it('should have all custom levels registered', () => {
+      const logger = getLogger();
+      expect(logger.levels).toEqual(customLevels);
+    });
   });
 
   describe('updateLogLevel', () => {
@@ -185,6 +195,21 @@ describe('Logger Module', () => {
   });
 
   describe('addGrafanaLokiLogger', () => {
+    let originalGrafanaUrl: string | undefined;
+
+    beforeEach(() => {
+      originalGrafanaUrl = process.env.LOGGER_GRAFANA_URL;
+      delete process.env.LOGGER_GRAFANA_URL;
+    });
+
+    afterEach(() => {
+      if (originalGrafanaUrl !== undefined) {
+        process.env.LOGGER_GRAFANA_URL = originalGrafanaUrl;
+      } else {
+        delete process.env.LOGGER_GRAFANA_URL;
+      }
+    });
+
     it('should add Grafana Loki logger transport with url in options', () => {
       addGrafanaLokiLogger(
         'test-app',
@@ -205,10 +230,8 @@ describe('Logger Module', () => {
     });
 
     it('should use default LoggerInstance when no logger provided', () => {
-      // Set environment variable for this test
       process.env.LOGGER_GRAFANA_URL = 'http://localhost:3100';
       expect(() => addGrafanaLokiLogger('test-app')).not.toThrow();
-      delete process.env.LOGGER_GRAFANA_URL;
     });
 
     it('should create Loki transport with correct labels and level', () => {
@@ -229,17 +252,12 @@ describe('Logger Module', () => {
     });
 
     it('should throw InvalidGrafanaConfig when url is not provided', () => {
-      // Ensure environment variable is not set
-      delete process.env.LOGGER_GRAFANA_URL;
-
       expect(() => addGrafanaLokiLogger('test-app', {}, testLogger)).toThrow(
         InvalidGrafanaConfig
       );
     });
 
     it('should throw InvalidGrafanaConfig when url is empty string', () => {
-      delete process.env.LOGGER_GRAFANA_URL;
-
       expect(() =>
         addGrafanaLokiLogger('test-app', { url: '' }, testLogger)
       ).toThrow(InvalidGrafanaConfig);
@@ -252,8 +270,6 @@ describe('Logger Module', () => {
         addGrafanaLokiLogger('test-app', {}, testLogger)
       ).not.toThrow();
       expect(testLogger.add).toHaveBeenCalled();
-
-      delete process.env.LOGGER_GRAFANA_URL;
     });
 
     it('should prefer options.url over environment variable', () => {
@@ -264,8 +280,91 @@ describe('Logger Module', () => {
         addGrafanaLokiLogger('test-app', { url: optionsUrl }, testLogger)
       ).not.toThrow();
       expect(testLogger.add).toHaveBeenCalled();
+    });
+  });
 
+  describe('configureFromSchema', () => {
+    let originalGrafanaUrl: string | undefined;
+
+    beforeEach(() => {
+      originalGrafanaUrl = process.env.LOGGER_GRAFANA_URL;
       delete process.env.LOGGER_GRAFANA_URL;
+    });
+
+    afterEach(() => {
+      if (originalGrafanaUrl !== undefined) {
+        process.env.LOGGER_GRAFANA_URL = originalGrafanaUrl;
+      } else {
+        delete process.env.LOGGER_GRAFANA_URL;
+      }
+    });
+
+    it('should set log level from valid config', () => {
+      configureFromSchema('test-app', { level: 'debug' }, testLogger);
+      expect(testLogger.level).toBe('debug');
+    });
+
+    it('should return the parsed config', () => {
+      const result = configureFromSchema('test-app', { level: 'warn' }, testLogger);
+      expect(result.level).toBe('warn');
+    });
+
+    it('should apply default level "info" when level is omitted', () => {
+      configureFromSchema('test-app', {}, testLogger);
+      expect(testLogger.level).toBe('info');
+    });
+
+    it('should throw ZodError for an invalid level value', () => {
+      expect(() =>
+        configureFromSchema('test-app', { level: 'invalid-level' }, testLogger)
+      ).toThrow(ZodError);
+    });
+
+    it('should throw ZodError when grafana.url is not a valid URL', () => {
+      expect(() =>
+        configureFromSchema(
+          'test-app',
+          { level: 'info', grafana: { url: 'not-a-url' } },
+          testLogger
+        )
+      ).toThrow(ZodError);
+    });
+
+    it('should throw ZodError when grafana is provided without a URL and no env var is set', () => {
+      expect(() =>
+        configureFromSchema('test-app', { grafana: {} }, testLogger)
+      ).toThrow(ZodError);
+    });
+
+    it('should succeed when grafana is provided without url but LOGGER_GRAFANA_URL env var is set', () => {
+      process.env.LOGGER_GRAFANA_URL = 'http://localhost:3100';
+      expect(() =>
+        configureFromSchema('test-app', { grafana: {} }, testLogger)
+      ).not.toThrow();
+    });
+
+    it('should add a Grafana transport when grafana config is present', () => {
+      configureFromSchema(
+        'test-app',
+        { level: 'info', grafana: { url: 'http://localhost:3100' } },
+        testLogger
+      );
+      expect(testLogger.add).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not add a Grafana transport when grafana config is absent', () => {
+      configureFromSchema('test-app', { level: 'info' }, testLogger);
+      expect(testLogger.add).not.toHaveBeenCalled();
+    });
+
+    it('should pass appName as the Grafana job label', () => {
+      configureFromSchema(
+        'my-service',
+        { level: 'info', grafana: { url: 'http://localhost:3100' } },
+        testLogger
+      );
+      const callArgs = (testLogger.add as any).mock.calls[0][0];
+      expect(callArgs.labels).toEqual({ job: 'my-service' });
     });
   });
 });
