@@ -219,7 +219,7 @@ Both YAML and JSON config files are supported. The format is detected from the f
 | `.yaml`, `.yml` | YAML |
 | `.json` | JSON |
 
-When a config file is auto-created (first run), it is written as YAML by default.
+When a config file is auto-created (first run), it is written in the format implied by the resolved file extension. For example, `.yaml`/`.yml` paths are created as YAML, and `.json` paths are created as JSON.
 
 ---
 
