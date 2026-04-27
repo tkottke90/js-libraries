@@ -55,10 +55,10 @@ Only these four exports are public. Do not add new top-level exports without upd
 ### `loadConfig()` Pipeline (do not reorder steps)
 1. `resolveConfigPath(options)` — determine file path
 2. `ensureConfigExists(configPath, schema)` — create file with defaults if missing
-3. `readConfigFile(configPath)` — parse YAML or JSON
-4. `interpolateEnvVars(raw)` — substitute `${ENV_VAR}` tokens
-5. `validateAndMigrate(interpolated, schema, configPath)` — fill defaults, validate, recover, save if changed
-6. Inject `runtimeValues` into the validated data map
+3. `readConfigFile(configPath)` — parse YAML or JSON into the raw config object
+4. `validateAndMigrate(raw, schema, configPath)` — fill defaults, validate, recover, save if changed while preserving `${ENV_VAR}` tokens in the file
+5. `interpolateEnvVars(validated)` — substitute `${ENV_VAR}` tokens in the in-memory config returned to callers
+6. Inject `runtimeValues` into the validated/interpolated data map
 7. `return new ConfigManagerImpl(validated, configPath, options)`
 
 ### `get()` Priority Order
