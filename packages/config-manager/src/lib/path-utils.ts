@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, extname, join, resolve } from 'node:path';
 import { writeConfigFile } from './format.js';
 import type { LoadConfigOptions } from './types.js';
 
@@ -13,10 +13,9 @@ export function resolveConfigPath(options: LoadConfigOptions): string {
     join(homedir(), 'config', appName);
 
   // If the path has any file extension, validate it is a supported format
-  const hasExtension = /\.[^/\\]+$/.test(dir);
-  if (hasExtension) {
-    if (!/\.(yaml|yml|json)$/i.test(dir)) {
-      const ext = dir.slice(dir.lastIndexOf('.'));
+  const ext = extname(dir).toLowerCase();
+  if (ext) {
+    if (ext !== '.yaml' && ext !== '.yml' && ext !== '.json') {
       throw new Error(
         `Unsupported config file extension "${ext}". Use .yaml, .yml, or .json.`
       );
