@@ -1,13 +1,13 @@
-import { existsSync, mkdirSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
-import type { ZodTypeAny, infer as ZodInfer } from 'zod';
 import get from 'lodash/get.js';
 import set from 'lodash/set.js';
-import type { ConfigManager, LoadConfigOptions } from './types.js';
+import { existsSync, mkdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import type { infer as ZodInfer, ZodTypeAny } from 'zod';
 import { readConfigFile, writeConfigFile } from './format.js';
 import { interpolateEnvVars } from './interpolate.js';
-import { validateAndMigrate, formatZodErrors } from './validate.js';
-import { resolveConfigPath, ensureConfigExists } from './path-utils.js';
+import { ensureConfigExists, resolveConfigPath } from './path-utils.js';
+import type { ConfigManager, LoadConfigOptions } from './types.js';
+import { formatZodErrors, validateAndMigrate } from './validate.js';
 
 export class ConfigManagerImpl implements ConfigManager {
   _data: Record<string, unknown>;

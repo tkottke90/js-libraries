@@ -1,4 +1,4 @@
-import type { ZodTypeAny, infer as ZodInfer } from 'zod';
+import type { infer as ZodInfer, ZodTypeAny } from 'zod';
 
 export interface LoadConfigOptions {
   /** Application name; used as default config directory name. */

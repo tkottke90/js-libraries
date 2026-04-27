@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync } from 'node:fs';
-import { resolve, join, dirname } from 'node:path';
 import { homedir } from 'node:os';
-import type { LoadConfigOptions } from './types.js';
+import { dirname, join, resolve } from 'node:path';
 import { writeConfigFile } from './format.js';
+import type { LoadConfigOptions } from './types.js';
 
 export function resolveConfigPath(options: LoadConfigOptions): string {
   const { appName, configDir } = options;

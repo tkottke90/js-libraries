@@ -1,5 +1,5 @@
-import type { ZodTypeAny, ZodIssue } from 'zod';
 import merge from 'lodash/merge.js';
+import type { ZodIssue, ZodTypeAny } from 'zod';
 import { writeConfigFile } from './format.js';
 
 export function formatZodErrors(issues: ZodIssue[]): string {

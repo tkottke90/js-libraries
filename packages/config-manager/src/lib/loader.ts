@@ -1,11 +1,11 @@
-import type { LoadConfigOptions } from './types.js';
+import { ConfigManagerImpl } from './config-manager.js';
 import { readConfigFile } from './format.js';
 import { interpolateEnvVars } from './interpolate.js';
+import { ensureConfigExists, resolveConfigPath } from './path-utils.js';
+import type { LoadConfigOptions } from './types.js';
 import { validateAndMigrate } from './validate.js';
-import { resolveConfigPath, ensureConfigExists } from './path-utils.js';
-import { ConfigManagerImpl } from './config-manager.js';
 
-export { resolveConfigPath, ensureConfigExists } from './path-utils.js';
+export { ensureConfigExists, resolveConfigPath } from './path-utils.js';
 
 export function loadConfig(options: LoadConfigOptions): ConfigManagerImpl {
   const configPath = resolveConfigPath(options);

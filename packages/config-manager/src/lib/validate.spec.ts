@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { formatZodErrors, validateAndMigrate } from './validate.js';
 import * as formatModule from './format.js';
+import { formatZodErrors, validateAndMigrate } from './validate.js';
 
 const TMP = join(tmpdir(), 'config-manager-validate-tests');
 
