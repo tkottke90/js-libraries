@@ -14,12 +14,12 @@ const TestSchema = z.object({
       host: z.string().default('localhost'),
       port: z.number().default(3000),
     })
-    .default({}),
+    .default({ host: 'localhost', port: 3000 }),
   feature: z
     .object({
       enabled: z.boolean().default(false),
     })
-    .default({}),
+    .default({ enabled: false }),
 });
 
 function makeManager(

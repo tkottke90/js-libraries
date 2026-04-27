@@ -23,12 +23,12 @@ const TestSchema = z.object({
       host: z.string().default('localhost'),
       port: z.number().default(3000),
     })
-    .default({}),
+    .default({ host: 'localhost', port: 3000 }),
   logging: z
     .object({
       level: z.string().default('info'),
     })
-    .default({}),
+    .default({ level: 'info' }),
 });
 
 describe('formatZodErrors', () => {
@@ -98,11 +98,11 @@ describe('validateAndMigrate', () => {
       server: z.object({
         host: z.string().default('localhost'),
         port: z.number().default(3000),
-      }).default({}),
+      }).default({ host: 'localhost', port: 3000 }),
       logging: z.object({
         level: z.string().default('info'),
         pretty: z.boolean().default(false), // new nested field
-      }).default({}),
+      }).default({ level: 'info', pretty: false }),
     });
 
     // Simulate existing on-disk data that is missing the new nested field

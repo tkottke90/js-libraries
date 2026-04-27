@@ -13,12 +13,12 @@ const TestSchema = z.object({
       host: z.string().default('localhost'),
       port: z.number().default(3000),
     })
-    .default({}),
+    .default({ host: 'localhost', port: 3000 }),
   logging: z
     .object({
       level: z.string().default('info'),
     })
-    .default({}),
+    .default({ level: 'info' }),
 });
 
 beforeEach(() => {
