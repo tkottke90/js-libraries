@@ -62,8 +62,8 @@ const dbHost = config.get('database.host'); // 'localhost'
 1. Resolve the config file path (see [File Path Resolution](#configmanager-api))
 2. Create the file with schema defaults if it does not exist
 3. Parse the file (YAML or JSON)
-4. Substitute `${ENV_VAR}` tokens with environment variable values
-5. Validate and migrate the data against the schema (filling in any new defaults)
+4. Validate and migrate the data against the schema (filling in any new defaults)
+5. Substitute `${ENV_VAR}` tokens with environment variable values
 6. Return a `ConfigManager` instance
 
 ---
