@@ -13,7 +13,7 @@ const LoggerInstance = winston.createLogger({
 
 export interface LoggerInstanceConfig {
   level: LoggerOptions['level'];
-  levels: LoggerOptions['levels'];
+  levels?: LoggerOptions['levels'];
 }
 
 export function addErrorFileLogger(
