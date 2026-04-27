@@ -36,6 +36,7 @@
   "dependencies": {
     "vitest": "*",
     "zod": "*",
-    "lodash": "*"
+    "lodash": "*",
+    "yaml": "*"
   }
 }
