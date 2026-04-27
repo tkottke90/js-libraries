@@ -1,7 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { GrafanaLokiConfigSchema, LoggerConfigSchema, defaultLevels } from './logger.schema.js';
 
 describe('LoggerConfigSchema', () => {
+  let originalGrafanaUrl: string | undefined;
+
+  beforeEach(() => {
+    originalGrafanaUrl = process.env.LOGGER_GRAFANA_URL;
+    delete process.env.LOGGER_GRAFANA_URL;
+  });
+
+  afterEach(() => {
+    if (originalGrafanaUrl !== undefined) {
+      process.env.LOGGER_GRAFANA_URL = originalGrafanaUrl;
+    } else {
+      delete process.env.LOGGER_GRAFANA_URL;
+    }
+  });
+
   it('should parse a minimal valid config', () => {
     const result = LoggerConfigSchema.parse({ level: 'info' });
     expect(result.level).toBe('info');
@@ -42,14 +57,12 @@ describe('LoggerConfigSchema', () => {
   });
 
   it('should throw when grafana is provided without url and LOGGER_GRAFANA_URL is not set', () => {
-    delete process.env.LOGGER_GRAFANA_URL;
     expect(() => LoggerConfigSchema.parse({ grafana: {} })).toThrow();
   });
 
   it('should pass when grafana is provided without url but LOGGER_GRAFANA_URL env var is set', () => {
     process.env.LOGGER_GRAFANA_URL = 'http://localhost:3100';
     expect(() => LoggerConfigSchema.parse({ grafana: {} })).not.toThrow();
-    delete process.env.LOGGER_GRAFANA_URL;
   });
 });
 
