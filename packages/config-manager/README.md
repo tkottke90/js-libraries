@@ -28,7 +28,7 @@ This package is part of the `js-helper-packages` monorepo. Add it as a dependenc
 npm install @tkottke90/config-manager
 ```
 
-`zod` (v4+) must be available as a dependency in your project.
+`@tkottke90/config-manager` installs `zod` automatically. If your application imports `zod` directly to define schemas (as shown in the examples below), add `zod` (v4+) to your project's dependencies as well.
 
 ---
 
