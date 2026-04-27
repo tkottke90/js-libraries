@@ -89,6 +89,37 @@ describe('validateAndMigrate', () => {
     expect(writeSpy).toHaveBeenCalledWith(filePath, expect.objectContaining({ logging: expect.any(Object) }));
   });
 
+  it('writes back when Zod injects nested defaults for a new field inside an existing object', () => {
+    const filePath = join(TMP, 'config.yaml');
+    const writeSpy = vi.spyOn(formatModule, 'writeConfigFile').mockImplementation(() => undefined);
+
+    // Schema adds a new nested field `logging.pretty` that is not present in the on-disk data
+    const ExtendedSchema = z.object({
+      server: z.object({
+        host: z.string().default('localhost'),
+        port: z.number().default(3000),
+      }).default({}),
+      logging: z.object({
+        level: z.string().default('info'),
+        pretty: z.boolean().default(false), // new nested field
+      }).default({}),
+    });
+
+    // Simulate existing on-disk data that is missing the new nested field
+    const data: Record<string, unknown> = {
+      server: { host: 'localhost', port: 3000 },
+      logging: { level: 'warn' }, // missing 'pretty'
+    };
+
+    const result = validateAndMigrate(data, ExtendedSchema, filePath);
+
+    expect(result['logging']).toHaveProperty('pretty', false);
+    // File must be written back so the new field is persisted
+    expect(writeSpy).toHaveBeenCalledWith(filePath, expect.objectContaining({
+      logging: expect.objectContaining({ pretty: false }),
+    }));
+  });
+
   it('recovers from schema failure by merging defaults and saves', () => {
     const filePath = join(TMP, 'config.yaml');
     const writeSpy = vi.spyOn(formatModule, 'writeConfigFile').mockImplementation(() => undefined);

@@ -138,6 +138,20 @@ describe('ConfigManagerImpl', () => {
       const subDir = m.getConfigDir('new-sub-dir');
       expect(existsSync(subDir)).toBe(true);
     });
+
+    it('throws when subPath is an absolute path', () => {
+      const m = makeManager({});
+      expect(() => m.getConfigDir('/etc/passwd')).toThrow(
+        'subPath must be relative'
+      );
+    });
+
+    it('throws when subPath uses .. to escape the config directory', () => {
+      const m = makeManager({});
+      expect(() => m.getConfigDir('../../etc')).toThrow(
+        'escapes the config directory'
+      );
+    });
   });
 
   describe('getSection()', () => {

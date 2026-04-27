@@ -1,3 +1,4 @@
+import isEqual from 'lodash/isEqual.js';
 import merge from 'lodash/merge.js';
 import type { ZodIssue, ZodTypeAny } from 'zod';
 import { writeConfigFile } from './format.js';
@@ -18,11 +19,9 @@ export function validateAndMigrate(
   const defaults = schema.parse({}) as Record<string, unknown>;
 
   // Fill any missing top-level keys from defaults
-  let changed = false;
   for (const key of Object.keys(defaults)) {
     if (!(key in data)) {
       data[key] = defaults[key];
-      changed = true;
     }
   }
 
@@ -44,9 +43,14 @@ export function validateAndMigrate(
     return recovered;
   }
 
-  if (changed) {
-    writeConfigFile(filePath, result.data as Record<string, unknown>);
+  const validated = result.data as Record<string, unknown>;
+
+  // Write back if the validated output differs from the input — this catches nested
+  // Zod-injected defaults (e.g. new fields added inside an existing object) in addition
+  // to the top-level missing-key case handled above.
+  if (!isEqual(data, validated)) {
+    writeConfigFile(filePath, validated);
   }
 
-  return result.data as Record<string, unknown>;
+  return validated;
 }

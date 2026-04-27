@@ -1,7 +1,7 @@
 import get from 'lodash/get.js';
 import set from 'lodash/set.js';
 import { existsSync, mkdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import type { infer as ZodInfer, ZodTypeAny } from 'zod';
 import { readConfigFile, writeConfigFile } from './format.js';
 import { interpolateEnvVars } from './interpolate.js';
@@ -56,7 +56,28 @@ export class ConfigManagerImpl implements ConfigManager {
 
   getConfigDir(subPath?: string): string {
     const base = dirname(this.configPath);
-    const target = subPath ? resolve(join(base, subPath)) : base;
+
+    if (!subPath) {
+      if (!existsSync(base)) {
+        mkdirSync(base, { recursive: true });
+      }
+      return base;
+    }
+
+    if (isAbsolute(subPath)) {
+      throw new Error(
+        `[config-manager] getConfigDir: subPath must be relative, got "${subPath}".`
+      );
+    }
+
+    const target = resolve(join(base, subPath));
+
+    // Ensure the resolved target stays within the config directory
+    if (target !== base && !target.startsWith(base + sep)) {
+      throw new Error(
+        `[config-manager] getConfigDir: subPath "${subPath}" escapes the config directory.`
+      );
+    }
 
     if (!existsSync(target)) {
       mkdirSync(target, { recursive: true });
