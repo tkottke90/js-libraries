@@ -7,6 +7,7 @@ import {
   addGrafanaLokiLogger,
   addJsonLinesFileLogger,
   configure,
+  configureFromSchema,
   createChildLogger,
   getLogger,
   LoggerInstanceConfig,
@@ -266,6 +267,63 @@ describe('Logger Module', () => {
       expect(testLogger.add).toHaveBeenCalled();
 
       delete process.env.LOGGER_GRAFANA_URL;
+    });
+  });
+
+  describe('configureFromSchema', () => {
+    it('should set log level from valid config', () => {
+      configureFromSchema('test-app', { level: 'debug' }, testLogger);
+      expect(testLogger.level).toBe('debug');
+    });
+
+    it('should return the parsed config', () => {
+      const result = configureFromSchema('test-app', { level: 'warn' }, testLogger);
+      expect(result.level).toBe('warn');
+    });
+
+    it('should apply default level "info" when level is omitted', () => {
+      configureFromSchema('test-app', {}, testLogger);
+      expect(testLogger.level).toBe('info');
+    });
+
+    it('should throw ZodError for an invalid level value', () => {
+      expect(() =>
+        configureFromSchema('test-app', { level: 'invalid-level' }, testLogger)
+      ).toThrow();
+    });
+
+    it('should throw ZodError when grafana.url is not a valid URL', () => {
+      expect(() =>
+        configureFromSchema(
+          'test-app',
+          { level: 'info', grafana: { url: 'not-a-url' } },
+          testLogger
+        )
+      ).toThrow();
+    });
+
+    it('should add a Grafana transport when grafana config is present', () => {
+      configureFromSchema(
+        'test-app',
+        { level: 'info', grafana: { url: 'http://localhost:3100' } },
+        testLogger
+      );
+      expect(testLogger.add).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not add a Grafana transport when grafana config is absent', () => {
+      configureFromSchema('test-app', { level: 'info' }, testLogger);
+      expect(testLogger.add).not.toHaveBeenCalled();
+    });
+
+    it('should pass appName as the Grafana job label', () => {
+      configureFromSchema(
+        'my-service',
+        { level: 'info', grafana: { url: 'http://localhost:3100' } },
+        testLogger
+      );
+      const callArgs = (testLogger.add as any).mock.calls[0][0];
+      expect(callArgs.labels).toEqual({ job: 'my-service' });
     });
   });
 });

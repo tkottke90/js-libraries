@@ -1,0 +1,70 @@
+import { describe, expect, it } from 'vitest';
+import { GrafanaLokiConfigSchema, LoggerConfigSchema } from './logger.schema.js';
+
+describe('LoggerConfigSchema', () => {
+  it('should parse a minimal valid config', () => {
+    const result = LoggerConfigSchema.parse({ level: 'info' });
+    expect(result.level).toBe('info');
+  });
+
+  it('should apply default level "info" when level is omitted', () => {
+    const result = LoggerConfigSchema.parse({});
+    expect(result.level).toBe('info');
+  });
+
+  it('should accept all valid level values', () => {
+    const levels = ['foobar', 'error', 'warn', 'notify', 'info', 'event', 'debug'] as const;
+    for (const level of levels) {
+      expect(() => LoggerConfigSchema.parse({ level })).not.toThrow();
+    }
+  });
+
+  it('should throw for an unknown level string', () => {
+    expect(() => LoggerConfigSchema.parse({ level: 'verbose' })).toThrow();
+  });
+
+  it('should parse config with a valid grafana sub-object', () => {
+    const result = LoggerConfigSchema.parse({
+      level: 'info',
+      grafana: { url: 'http://localhost:3100' },
+    });
+    expect(result.grafana?.url).toBe('http://localhost:3100');
+  });
+
+  it('should parse config with grafana absent', () => {
+    const result = LoggerConfigSchema.parse({ level: 'debug' });
+    expect(result.grafana).toBeUndefined();
+  });
+
+  it('should throw when grafana.url is not a valid URL', () => {
+    expect(() =>
+      LoggerConfigSchema.parse({ level: 'info', grafana: { url: 'not-a-url' } })
+    ).toThrow();
+  });
+});
+
+describe('GrafanaLokiConfigSchema', () => {
+  it('should parse a config with a valid URL', () => {
+    const result = GrafanaLokiConfigSchema.parse({ url: 'http://grafana.example.com:3100' });
+    expect(result.url).toBe('http://grafana.example.com:3100');
+  });
+
+  it('should parse a config with both url and level', () => {
+    const result = GrafanaLokiConfigSchema.parse({
+      url: 'http://localhost:3100',
+      level: 'warn',
+    });
+    expect(result.url).toBe('http://localhost:3100');
+    expect(result.level).toBe('warn');
+  });
+
+  it('should parse an empty object since all fields are optional', () => {
+    const result = GrafanaLokiConfigSchema.parse({});
+    expect(result.url).toBeUndefined();
+    expect(result.level).toBeUndefined();
+  });
+
+  it('should throw for an invalid URL', () => {
+    expect(() => GrafanaLokiConfigSchema.parse({ url: 'not-a-url' })).toThrow();
+  });
+});
