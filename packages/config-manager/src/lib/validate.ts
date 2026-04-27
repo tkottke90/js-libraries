@@ -18,14 +18,17 @@ export function validateAndMigrate(
 ): Record<string, unknown> {
   const defaults = schema.parse({}) as Record<string, unknown>;
 
-  // Fill any missing top-level keys from defaults
+  // Build a working copy so `data` is never mutated — we need the original
+  // for the isEqual change-detection below to correctly detect all additions,
+  // including top-level keys filled here and nested Zod-injected defaults.
+  const working: Record<string, unknown> = { ...data };
   for (const key of Object.keys(defaults)) {
-    if (!(key in data)) {
-      data[key] = defaults[key];
+    if (!(key in working)) {
+      working[key] = defaults[key];
     }
   }
 
-  const result = schema.safeParse(data);
+  const result = schema.safeParse(working);
 
   if (!result.success) {
     console.error(formatZodErrors(result.error.issues));
@@ -33,7 +36,7 @@ export function validateAndMigrate(
     // Attempt recovery: deep-merge defaults on top of data (defaults win for type conflicts)
     let recovered: Record<string, unknown>;
     try {
-      const merged = merge({}, data, defaults) as Record<string, unknown>;
+      const merged = merge({}, working, defaults) as Record<string, unknown>;
       recovered = schema.parse(merged) as Record<string, unknown>;
     } catch {
       // If merge still can't produce a valid result, fall back to pure defaults
@@ -45,9 +48,9 @@ export function validateAndMigrate(
 
   const validated = result.data as Record<string, unknown>;
 
-  // Write back if the validated output differs from the input — this catches nested
-  // Zod-injected defaults (e.g. new fields added inside an existing object) in addition
-  // to the top-level missing-key case handled above.
+  // Write back if the validated output differs from the original on-disk data — this catches:
+  // - top-level keys that were missing and filled from defaults
+  // - nested Zod-injected defaults for new fields inside existing objects
   if (!isEqual(data, validated)) {
     writeConfigFile(filePath, validated);
   }
