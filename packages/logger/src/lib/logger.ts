@@ -1,10 +1,15 @@
 import winston, { Logger, LoggerOptions, format, transports } from 'winston';
 import LokiTransport from 'winston-loki';
 import { InvalidGrafanaConfig } from './errors.js';
-import { LoggerConfig, LoggerConfigSchema } from './logger.schema.js';
+import { LoggerConfig, LoggerConfigSchema, customLevels, levelColors } from './logger.schema.js';
 const { combine, timestamp, json, errors, simple } = format;
 
-const LoggerInstance = winston.createLogger();
+// Register colors for the custom levels so colorized transports work correctly
+winston.addColors(levelColors);
+
+const LoggerInstance = winston.createLogger({
+  levels: customLevels,
+});
 
 export interface LoggerInstanceConfig {
   level: LoggerOptions['level'];
@@ -84,6 +89,7 @@ export function createChildLogger(
 export function configure(config: LoggerInstanceConfig) {
   LoggerInstance.configure({
     ...config,
+    levels: config.levels ?? customLevels,
   });
 }
 

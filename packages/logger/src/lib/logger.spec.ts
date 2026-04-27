@@ -14,13 +14,16 @@ import {
   LoggerInstanceConfig,
   updateLogLevel,
 } from './logger.js';
+import { customLevels } from './logger.schema.js';
 
 describe('Logger Module', () => {
   let testLogger: Logger;
 
   beforeEach(() => {
-    // Create a fresh logger instance for each test
+    // Create a fresh logger instance for each test, using custom levels so
+    // level operations behave the same as on the module-level LoggerInstance
     testLogger = winston.createLogger({
+      levels: customLevels,
       level: 'info',
       format: winston.format.json(),
     });
@@ -104,6 +107,11 @@ describe('Logger Module', () => {
       const logger1 = getLogger();
       const logger2 = getLogger();
       expect(logger1).toBe(logger2);
+    });
+
+    it('should have all custom levels registered', () => {
+      const logger = getLogger();
+      expect(logger.levels).toEqual(customLevels);
     });
   });
 
