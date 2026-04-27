@@ -49,8 +49,8 @@ Internal steps executed in order:
 1. `resolveConfigPath(options)` — determine file path from `options.configDir`, `CONFIG_DIR` env var, or `~/config/<appName>`
 2. `ensureConfigExists(path, rootSchema)` — create file from `rootSchema.parse({})` if absent
 3. `readConfigFile(configPath)` — parse YAML or JSON
-4. `interpolateEnvVars(rawObject)` — replace `${UPPER_CASE}` tokens with `process.env` values
-5. `validateAndMigrate(interpolated, rootSchema, configPath)` — validate, fill missing sections, save if changed
+4. `validateAndMigrate(raw, rootSchema, configPath)` — validate, fill missing sections, save if changed (writes raw tokens, not resolved values)
+5. `interpolateEnvVars(validated)` — replace `${UPPER_CASE}` tokens with `process.env` values (in-memory only)
 6. Inject caller-supplied runtime values (e.g. `appVersion`) into the data map
 7. Return a `ConfigManagerImpl` wrapping the validated data
 
@@ -86,15 +86,17 @@ Schemas are defined using Zod. The following conventions must be followed:
 
 ## Environment Variable Interpolation
 
-### Pre-processing (file-time)
+### Post-validation interpolation (in-memory only)
 
 `interpolateEnvVars(obj: unknown): unknown`
 
-- Recursively walks the parsed YAML object
+- Recursively walks the validated config object
 - Replaces `${UPPER_CASE_VAR}` patterns in string values with `process.env[UPPER_CASE_VAR]`
 - Pattern: `/\$\{([A-Z_][A-Z0-9_]*)\}/g` — uppercase names only
 - Missing variables: emit a `warn` log and substitute `""` (do not throw)
-- Runs before Zod validation so secrets never appear in the validated output
+- Runs **after** `validateAndMigrate()`, so any disk write-back preserves the original
+  `${VAR}` tokens rather than the resolved secret values — secrets are never persisted to
+  the config file
 
 ### Runtime Override (call-time)
 
@@ -108,11 +110,12 @@ Priority: **env var → config file → Zod default**.
 `validateAndMigrate(data, schema)`:
 
 1. Parse an empty object through `schema` to get `defaults`
-2. For each top-level key in `defaults` missing from `data`, copy the default value and set `changed = true`
-3. Run `schema.safeParse(data)`
-4. **On failure**: `_.merge({}, data, defaults)` then `schema.parse(merged)` — defaults win on type conflicts; save result to disk, return it
-5. **On success with changes**: save updated data to disk
-6. **On success without changes**: return validated data, no disk write
+2. Build a shallow copy `working = { ...data }`; for each top-level key in `defaults` missing from `working`, copy the default value into `working`
+3. Run `schema.safeParse(working)`
+4. **On failure**: `_.merge({}, working, defaults)` then `schema.parse(merged)` — defaults win on type conflicts; save result to disk, return it
+5. **On success**: deep-compare `data` (original) with `result.data` (validated) using `isEqual`
+   - Changed (including nested Zod-injected defaults): save `result.data` to disk
+   - Unchanged: return `result.data`, no disk write
 
 ---
 

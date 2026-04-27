@@ -118,16 +118,18 @@ export class ConfigManagerImpl implements ConfigManager {
     ensureConfigExists(configPath, this._options.schema);
 
     const raw = readConfigFile(configPath);
-    const interpolated = interpolateEnvVars(raw) as Record<string, unknown>;
-    const validated = validateAndMigrate(interpolated, this._options.schema, configPath);
+    // Validate/migrate against the raw (non-interpolated) data so that any write-back
+    // preserves the original ${VAR} tokens rather than the resolved secret values.
+    const validated = validateAndMigrate(raw, this._options.schema, configPath);
+    const runtimeConfig = interpolateEnvVars(validated) as Record<string, unknown>;
 
     if (this._options.runtimeValues) {
       for (const [key, value] of Object.entries(this._options.runtimeValues)) {
-        validated[key] = value;
+        runtimeConfig[key] = value;
       }
     }
 
-    this._data = validated;
+    this._data = runtimeConfig;
     this.configPath = configPath;
   }
 }
