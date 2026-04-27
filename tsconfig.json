@@ -17,6 +17,9 @@
     },
     {
       "path": "./packages/js-date-utils"
+    },
+    {
+      "path": "./packages/config-manager"
     }
   ]
 }

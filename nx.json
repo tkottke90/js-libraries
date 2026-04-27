@@ -55,13 +55,13 @@
     "projectsRelationship": "independent",
     "version": {
       "preVersionCommand": "npx nx run-many -t lint build --exclude express-client",
-      "updateDependents": "never"
-    },
-    "git": {
-      "commitMessage": "chore(release): publish new version of {projectName} v{version}",
-      "commit": true,
-      "push": true,
-      "tag": true
+      "updateDependents": "auto",
+      "git": {
+        "commitMessage": "chore(release): publish new version of {projectName} v{version}",
+        "commit": true,
+        "push": true,
+        "tag": true
+      }
     },
     "releaseTag": {
       "pattern": "{projectName}/v{version}"
@@ -69,6 +69,6 @@
     "changelog": {
       "projectChangelogs": true
     },
-    "projects": ["packages/js-date-utils", "packages/js-errors", "packages/logger"]
+    "projects": ["packages/config-manager", "packages/js-date-utils", "packages/js-errors", "packages/logger"]
   }
 }
