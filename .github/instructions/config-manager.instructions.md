@@ -82,14 +82,19 @@ Re-runs steps 1–6 of the pipeline in-place using the stored `_options`. Update
 
 ## Dependencies
 
-All dependencies live in the **root `package.json`**, not in `packages/config-manager/package.json`. This is an NX monorepo convention for this workspace.
+This workspace follows the convention used by other packages in the monorepo:
+- Declare the dependencies used by `packages/config-manager` in `packages/config-manager/package.json`
+- Use `"*"` versions there to reference the workspace-pinned versions
+- Pin/manage the actual versions in the **root `package.json`**
 
-| Package | Version | Usage |
+For this package, the manifest entries should follow this pattern:
+
+| Package | Version in `packages/config-manager/package.json` | Usage |
 |---|---|---|
-| `zod` | `^4.3.6` | Schema definition and validation |
-| `yaml` | `^2.7.1` | YAML parse/stringify |
-| `lodash` | `^4.17.21` | `get`, `set`, `merge` via subpath imports |
-| `@types/lodash` | `^4.17.0` | devDependency |
+| `zod` | `"*"` | Schema definition and validation |
+| `yaml` | `"*"` | YAML parse/stringify |
+| `lodash` | `"*"` | `get`, `set`, `merge` via subpath imports |
+| `@types/lodash` | `"*"` | devDependency |
 
 ### lodash Import Style
 Always use subpath imports — **never** `import _ from 'lodash'`:
