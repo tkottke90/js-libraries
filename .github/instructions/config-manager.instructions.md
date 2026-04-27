@@ -73,7 +73,7 @@ Environment variables **always win** over file values. This is intentional and m
 4. If merge still fails: fall back to pure `schema.parse({})` defaults
 5. Write the recovered data to disk
 
-The recovery merge order is `merge({}, defaults, data)` — defaults win for type conflicts. This is intentional.
+The recovery merge order is `merge({}, data, defaults)` — defaults win for type conflicts. This is intentional.
 
 ### `ConfigManagerImpl.reload()`
 Re-runs steps 1–6 of the pipeline in-place using the stored `_options`. Updates `this._data` and `this.configPath` without replacing the instance.

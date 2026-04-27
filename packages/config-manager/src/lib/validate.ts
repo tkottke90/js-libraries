@@ -31,10 +31,10 @@ export function validateAndMigrate(
   if (!result.success) {
     console.error(formatZodErrors(result.error.issues));
 
-    // Attempt recovery: deep-merge invalid data into defaults (defaults win for type conflicts)
+    // Attempt recovery: deep-merge defaults on top of data (defaults win for type conflicts)
     let recovered: Record<string, unknown>;
     try {
-      const merged = merge({}, defaults, data) as Record<string, unknown>;
+      const merged = merge({}, data, defaults) as Record<string, unknown>;
       recovered = schema.parse(merged) as Record<string, unknown>;
     } catch {
       // If merge still can't produce a valid result, fall back to pure defaults
