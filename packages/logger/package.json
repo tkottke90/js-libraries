@@ -1,10 +1,13 @@
 {
   "name": "@tkottke90/logger",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "exports": {
     "./package.json": "./package.json",
     ".": {
