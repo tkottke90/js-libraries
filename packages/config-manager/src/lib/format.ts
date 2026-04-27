@@ -18,7 +18,9 @@ export function readConfigFile(filePath: string): Record<string, unknown> {
   const raw = readFileSync(filePath, 'utf8');
 
   if (format === 'json') {
-    return JSON.parse(raw) as Record<string, unknown>;
+    const trimmed = raw.trim();
+    if (!trimmed) return {};
+    return JSON.parse(trimmed) as Record<string, unknown>;
   }
 
   return (parseYaml(raw) ?? {}) as Record<string, unknown>;

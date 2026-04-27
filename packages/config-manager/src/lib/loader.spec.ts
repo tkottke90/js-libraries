@@ -97,6 +97,13 @@ describe('loadConfig', () => {
     expect(manager.configPath).toBe(join(configDir, 'config.yaml'));
   });
 
+  it('throws when configDir has an unsupported file extension', () => {
+    const configDir = join(TMP, 'app', 'config.toml');
+    expect(() =>
+      loadConfig({ appName: 'test', schema: TestSchema, configDir })
+    ).toThrow('Unsupported config file extension ".toml"');
+  });
+
   it('reads and interpolates env vars from an existing config file', async () => {
     const configDir = join(TMP, 'interpolate-test', 'config.yaml');
     vi.stubEnv('MY_HOST', 'myhost.example.com');

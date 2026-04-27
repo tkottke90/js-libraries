@@ -21,14 +21,17 @@ schema validation.
 ## Package Shape
 
 ```
-config-lib/
+config-manager/
   src/
-    index.ts           ← public API
-    loader.ts          ← file I/O & startup pipeline
-    interpolate.ts     ← ${VAR} interpolation
-    validate.ts        ← Zod validation + migration
-    accessor.ts        ← ConfigAccessor class
-    types.ts           ← public types & interfaces
+    index.ts             ← public API
+    lib/
+      loader.ts          ← loadConfig() entry point — orchestrates the full startup pipeline
+      interpolate.ts     ← ${VAR} interpolation
+      validate.ts        ← Zod validation + migration
+      config-manager.ts  ← ConfigManagerImpl class
+      path-utils.ts      ← resolveConfigPath, ensureConfigExists
+      format.ts          ← YAML/JSON file read/write
+      types.ts           ← public types & interfaces
   package.json
   tsconfig.json
 ```
@@ -38,18 +41,18 @@ config-lib/
 ## Startup Pipeline
 
 ```
-loadConfig(options: LoadConfigOptions): ConfigAccessor
+loadConfig(options: LoadConfigOptions): ConfigManager
 ```
 
 Internal steps executed in order:
 
-1. Resolve config file path from `options.configDir` or `CONFIG_DIR` env var (fallback: `~/config/<appName>`)
+1. `resolveConfigPath(options)` — determine file path from `options.configDir`, `CONFIG_DIR` env var, or `~/config/<appName>`
 2. `ensureConfigExists(path, rootSchema)` — create file from `rootSchema.parse({})` if absent
-3. Read and `yaml.parse()` the file
+3. `readConfigFile(configPath)` — parse YAML or JSON
 4. `interpolateEnvVars(rawObject)` — replace `${UPPER_CASE}` tokens with `process.env` values
-5. `validateAndMigrate(interpolated, rootSchema)` — validate, fill missing sections, save if changed
+5. `validateAndMigrate(interpolated, rootSchema, configPath)` — validate, fill missing sections, save if changed
 6. Inject caller-supplied runtime values (e.g. `appVersion`) into the data map
-7. Return a `ConfigAccessor` wrapping the validated data
+7. Return a `ConfigManagerImpl` wrapping the validated data
 
 ---
 
@@ -107,16 +110,16 @@ Priority: **env var → config file → Zod default**.
 1. Parse an empty object through `schema` to get `defaults`
 2. For each top-level key in `defaults` missing from `data`, copy the default value and set `changed = true`
 3. Run `schema.safeParse(data)`
-4. **On failure**: `_.merge({}, defaults, data)` then `schema.parse(merged)` — save result to disk, return it
+4. **On failure**: `_.merge({}, data, defaults)` then `schema.parse(merged)` — defaults win on type conflicts; save result to disk, return it
 5. **On success with changes**: save updated data to disk
 6. **On success without changes**: return validated data, no disk write
 
 ---
 
-## ConfigAccessor API
+## ConfigManager API
 
 ```typescript
-interface ConfigAccessor {
+interface ConfigManager {
   /** Raw in-memory snapshot. Avoid direct use; prefer typed methods. */
   readonly _data: Record<string, unknown>;
 
@@ -127,13 +130,13 @@ interface ConfigAccessor {
    * Retrieve a value by lodash dot-path key.
    * Checks process.env[key] first, then _data, then defaultValue.
    */
-  get(key: string, defaultValue?: string): string;
+  get(key: string, defaultValue?: string): string | undefined;
 
-  /** get() parsed as integer. Returns defaultValue if NaN. */
-  getNumber(key: string, defaultValue?: number): number;
+  /** get() parsed as number. Returns defaultValue if NaN. */
+  getNumber(key: string, defaultValue?: number): number | undefined;
 
   /** get() === 'true' */
-  getBoolean(key: string, defaultValue?: boolean): boolean;
+  getBoolean(key: string, defaultValue?: boolean): boolean | undefined;
 
   /** Returns true if get(key) is non-empty. */
   has(key: string): boolean;
@@ -148,7 +151,22 @@ interface ConfigAccessor {
    * Reads a config section by dot-path key and validates it against a Zod schema.
    * Throws if the key is missing or validation fails.
    */
-  loadConfig<T extends z.ZodTypeAny>(key: string, schema: T): z.infer<T>;
+  getSection<T extends z.ZodTypeAny>(key: string, schema: T): z.infer<T>;
+
+  /**
+   * Set a value by lodash dot-path key in the in-memory data map.
+   * Does NOT persist to disk — call save() to persist.
+   */
+  set(key: string, value: unknown): void;
+
+  /** Persist the current in-memory data map to the config file on disk. */
+  save(): void;
+
+  /**
+   * Re-run the full startup pipeline (read → interpolate → validate → inject runtimeValues).
+   * Updates _data and configPath in-place.
+   */
+  reload(): void;
 }
 ```
 

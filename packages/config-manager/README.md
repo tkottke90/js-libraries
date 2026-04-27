@@ -25,7 +25,7 @@ A file-based configuration manager for Node.js applications. Reads YAML or JSON 
 This package is part of the `js-helper-packages` monorepo. Add it as a dependency in your project:
 
 ```bash
-npm install @your-scope/config-manager
+npm install @tkottke90/config-manager
 ```
 
 `zod` (v4+) must be available as a dependency in your project.
@@ -36,7 +36,7 @@ npm install @your-scope/config-manager
 
 ```ts
 import { z } from 'zod';
-import { loadConfig } from '@your-scope/config-manager';
+import { loadConfig } from '@tkottke90/config-manager';
 
 const AppConfigSchema = z.object({
   port: z.number().default(3000),
@@ -160,7 +160,7 @@ config.get('appVersion'); // 'dev'
 | Method | Description |
 |---|---|
 | `get(key, default?)` | Returns the value at the dot-path `key` as a string. Checks `process.env[key]` first, then `_data`. |
-| `getNumber(key, default?)` | Parses the value as an integer. Returns `defaultValue` if the result is `NaN`. |
+| `getNumber(key, default?)` | Parses the value as a number. Returns `defaultValue` if the result is `NaN`. |
 | `getBoolean(key, default?)` | Returns `true` if `get(key) === 'true'`. |
 | `has(key)` | Returns `true` if `get(key)` is non-empty. |
 | `getSection(key, schema)` | Returns the sub-object at `key` validated against `schema`. Throws on failure. |
@@ -232,7 +232,7 @@ Use TypeScript [module augmentation](https://www.typescriptlang.org/docs/handboo
 **`src/types/express.d.ts`**
 
 ```ts
-import type { ConfigManager } from '@your-scope/config-manager';
+import type { ConfigManager } from '@tkottke90/config-manager';
 
 declare global {
   namespace Express {
@@ -247,7 +247,7 @@ declare global {
 
 ```ts
 import express from 'express';
-import { loadConfig } from '@your-scope/config-manager';
+import { loadConfig } from '@tkottke90/config-manager';
 import { AppConfigSchema } from './config-schema.js';
 
 const app = express();
@@ -271,8 +271,8 @@ Hono exposes a typed [context variables](https://hono.dev/docs/guides/middleware
 
 ```ts
 import { Hono } from 'hono';
-import type { ConfigManager } from '@your-scope/config-manager';
-import { loadConfig } from '@your-scope/config-manager';
+import type { ConfigManager } from '@tkottke90/config-manager';
+import { loadConfig } from '@tkottke90/config-manager';
 import { AppConfigSchema } from './config-schema.js';
 
 type Variables = {

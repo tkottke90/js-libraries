@@ -34,7 +34,7 @@ export interface ConfigManager {
    */
   get(key: string, defaultValue?: string): string | undefined;
 
-  /** get() parsed as integer. Returns defaultValue if NaN. */
+  /** get() parsed as number. Returns defaultValue if NaN. */
   getNumber(key: string, defaultValue?: number): number | undefined;
 
   /** get() === 'true' */

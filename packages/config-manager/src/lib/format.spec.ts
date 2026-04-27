@@ -63,6 +63,22 @@ describe('readConfigFile', () => {
     const result = readConfigFile(filePath);
     expect(result).toEqual({});
   });
+
+  it('returns empty object for empty JSON file', () => {
+    const filePath = join(TMP, 'config.json');
+    writeFileSync(filePath, '', 'utf8');
+
+    const result = readConfigFile(filePath);
+    expect(result).toEqual({});
+  });
+
+  it('returns empty object for whitespace-only JSON file', () => {
+    const filePath = join(TMP, 'config.json');
+    writeFileSync(filePath, '   \n  ', 'utf8');
+
+    const result = readConfigFile(filePath);
+    expect(result).toEqual({});
+  });
 });
 
 describe('writeConfigFile', () => {

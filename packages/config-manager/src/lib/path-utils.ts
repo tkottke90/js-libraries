@@ -12,9 +12,15 @@ export function resolveConfigPath(options: LoadConfigOptions): string {
     process.env['CONFIG_DIR'] ??
     join(homedir(), 'config', appName);
 
-  // If the provided path already looks like a file (has a known extension), use it directly
-  const hasExtension = /\.(yaml|yml|json)$/i.test(dir);
+  // If the path has any file extension, validate it is a supported format
+  const hasExtension = /\.[^/\\]+$/.test(dir);
   if (hasExtension) {
+    if (!/\.(yaml|yml|json)$/i.test(dir)) {
+      const ext = dir.slice(dir.lastIndexOf('.'));
+      throw new Error(
+        `Unsupported config file extension "${ext}". Use .yaml, .yml, or .json.`
+      );
+    }
     return resolve(dir);
   }
 

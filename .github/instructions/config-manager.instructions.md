@@ -69,7 +69,7 @@ Environment variables **always win** over file values. This is intentional and m
 ### `validateAndMigrate()` Recovery Strategy
 1. Fill missing top-level keys from `schema.parse({})` defaults
 2. `schema.safeParse(data)` — if valid, return (write file if any keys were added)
-3. On failure: log `formatZodErrors`, attempt `merge({}, defaults, data)` and re-parse
+3. On failure: log `formatZodErrors`, attempt `merge({}, data, defaults)` and re-parse
 4. If merge still fails: fall back to pure `schema.parse({})` defaults
 5. Write the recovered data to disk
 
@@ -124,7 +124,7 @@ const Schema = z.object({
 
 - Supported extensions: `.yaml`, `.yml`, `.json`
 - `detectFormat()` throws on any other extension — do not silently fall back
-- Auto-created config files are always written as `.yaml`
+- Auto-created config files are written in the format implied by the resolved file extension (`.yaml`/`.yml` → YAML, `.json` → JSON)
 - `writeConfigFile` detects format from `filePath` extension, same as `readConfigFile`
 
 ---
