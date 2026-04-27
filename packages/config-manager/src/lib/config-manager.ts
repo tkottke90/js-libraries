@@ -13,6 +13,7 @@ export class ConfigManagerImpl implements ConfigManager {
   _data: Record<string, unknown>;
   configPath: string;
   private readonly _options: LoadConfigOptions;
+  private readonly _runtimeValueKeys: Set<string>;
 
   constructor(
     data: Record<string, unknown>,
@@ -22,6 +23,7 @@ export class ConfigManagerImpl implements ConfigManager {
     this._data = data;
     this.configPath = configPath;
     this._options = options;
+    this._runtimeValueKeys = new Set(Object.keys(options.runtimeValues ?? {}));
   }
 
   get(key: string, defaultValue?: string): string | undefined {
@@ -84,7 +86,10 @@ export class ConfigManagerImpl implements ConfigManager {
   }
 
   save(): void {
-    writeConfigFile(this.configPath, this._data);
+    const persistedData = Object.fromEntries(
+      Object.entries(this._data).filter(([key]) => !this._runtimeValueKeys.has(key))
+    );
+    writeConfigFile(this.configPath, persistedData);
   }
 
   reload(): void {

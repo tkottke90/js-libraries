@@ -189,6 +189,27 @@ describe('ConfigManagerImpl', () => {
       const m2 = loadConfig({ appName: 'test', schema: TestSchema, configDir: configPath });
       expect(m2.get('server.host')).toBe('updated');
     });
+
+    it('save() does not persist runtimeValues to disk', async () => {
+      const { writeConfigFile, readConfigFile } = await import('./format.js');
+      const configPath = join(TMP, 'config.yaml');
+      writeConfigFile(configPath, { server: { host: 'original', port: 3000 }, feature: { enabled: false } });
+
+      const { loadConfig } = await import('./loader.js');
+      const m = loadConfig({
+        appName: 'test',
+        schema: TestSchema,
+        configDir: configPath,
+        runtimeValues: { appVersion: '1.2.3' },
+      });
+
+      expect(m.get('appVersion')).toBe('1.2.3');
+
+      m.save();
+
+      const saved = readConfigFile(configPath) as Record<string, unknown>;
+      expect(saved).not.toHaveProperty('appVersion');
+    });
   });
 
   describe('reload()', () => {
