@@ -31,7 +31,7 @@ If Grafana Loki is not needed, omit the `grafana` key entirely.
 
 | Variable              | Description                                                                 |
 |-----------------------|-----------------------------------------------------------------------------|
-| `LOGGER_GRAFANA_URL`  | Grafana Loki host URL. Used when `grafana.url` is not provided in the schema config. |
+| `LOGGER_GRAFANA_URL`  | Grafana Loki host URL. Takes precedence over `grafana.url` when both are provided. |
 
 ### Config Schema
 
