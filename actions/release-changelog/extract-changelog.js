@@ -1,8 +1,5 @@
 const fs = require('fs');
 
-
-
-
 module.exports = ({github, context}) => {
   const { PACKAGE_PATH } = process.env;
 
@@ -18,7 +15,7 @@ module.exports = ({github, context}) => {
     content = fs.readFileSync(PACKAGE_PATH, 'utf8');
   } catch (err) {
     if (err.code === 'ENOENT') {
-      console.error('File not found at:', filePath);
+      console.error('File not found at:', PACKAGE_PATH);
     }
     
     return '';
@@ -33,5 +30,5 @@ module.exports = ({github, context}) => {
   }
 
   // Return the first section
-  return `## ${sections[0]}`
+  return `## ${sections[1]}`
 }
