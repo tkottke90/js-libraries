@@ -86,7 +86,7 @@ describe('CONSOLE_FORMAT', () => {
   it('should not include the default "[api]" prefix without a dot when location is given', () => {
     const output = formatLog({ level: 'info', message: 'with location', location: 'orders' });
     // Should be [api.orders] not just [api]
-    expect(output).not.toMatch(/\[api\][^\.].*\[/);
+    expect(output).not.toMatch(/\[api\][^.].*\[/);
     expect(output).toContain('[api.orders]');
   });
 
