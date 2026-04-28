@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it } from 'vitest';
 import winston from 'winston';
+import Transport from 'winston-transport';
 import { CONSOLE_FORMAT, addConsoleLogger } from './console.js';
 
 // ---------------------------------------------------------------------------
@@ -9,7 +10,7 @@ import { CONSOLE_FORMAT, addConsoleLogger } from './console.js';
 // format chain transforms the info object.
 // ---------------------------------------------------------------------------
 function formatLog(info: Record<string, unknown>): string {
-  class CapturingTransport extends winston.Transport {
+  class CapturingTransport extends Transport {
     captured = '';
     override log(logInfo: any, callback: () => void) {
       this.captured = logInfo[Symbol.for('message')];
