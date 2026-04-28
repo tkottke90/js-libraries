@@ -1,122 +1,68 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import winston, { Logger } from 'winston';
+import LokiTransport from 'winston-loki';
 import { ZodError } from 'zod';
+import { customLevels } from './constants.js';
 import { InvalidGrafanaConfig } from './errors.js';
-import {
-  addErrorFileLogger,
-  addGrafanaLokiLogger,
-  addJsonLinesFileLogger,
-  configure,
-  configureFromSchema,
-  createChildLogger,
-  getLogger,
-  LoggerInstanceConfig,
-  updateLogLevel,
-} from './logger.js';
-import { customLevels } from './logger.schema.js';
+import { configureFromSchema, createChildLogger, updateLogLevel } from './logger.js';
+import { addGrafanaLokiLogger } from './transports/grafana-loki.js';
 
 describe('Logger Module', () => {
   let testLogger: Logger;
 
   beforeEach(() => {
-    // Create a fresh logger instance for each test, using custom levels so
-    // level operations behave the same as on the module-level LoggerInstance
     testLogger = winston.createLogger({
       levels: customLevels,
       level: 'info',
       format: winston.format.json(),
     });
-    // Spy on the add method to track transport additions
-    vi.spyOn(testLogger, 'add');
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('createChildLogger', () => {
-    it('should create a child logger with provided name', () => {
+    it('should return a valid logger instance with logging methods', () => {
       const childLogger = createChildLogger('test', testLogger);
-      expect(childLogger).toBeDefined();
-      // Verify the child logger is a Logger instance
-      expect(childLogger).toHaveProperty('info');
-      expect(childLogger).toHaveProperty('error');
+      expect(typeof childLogger.info).toBe('function');
+      expect(typeof childLogger.warn).toBe('function');
+      expect(typeof childLogger.error).toBe('function');
+      expect(typeof childLogger.debug).toBe('function');
     });
 
-    it('should append name to parent logger name if parent has a name', () => {
-      const parentLogger = createChildLogger('parent', testLogger);
-      const childLogger = createChildLogger('child', parentLogger);
-      expect(childLogger).toBeDefined();
-      // Both should be valid logger instances
-      expect(parentLogger).toHaveProperty('info');
-      expect(childLogger).toHaveProperty('info');
+    it('should call logger.child() with the provided name', () => {
+      const spy = vi.spyOn(testLogger, 'child');
+      createChildLogger('myservice', testLogger);
+      expect(spy).toHaveBeenCalledWith({ name: 'myservice' });
     });
 
-    it('should create hierarchical names for nested loggers', () => {
+    it('should build exact hierarchical name "parent.child" when parent has a name', () => {
+      const parentWithName = createChildLogger('parent', testLogger);
+      const spy = vi.spyOn(parentWithName, 'child');
+      createChildLogger('child', parentWithName);
+      expect(spy).toHaveBeenCalledWith({ name: 'parent.child' });
+    });
+
+    it('should build a three-level hierarchical name', () => {
       const level1 = createChildLogger('app', testLogger);
       const level2 = createChildLogger('database', level1);
-      const level3 = createChildLogger('query', level2);
-      // All should be valid logger instances
-      expect(level1).toHaveProperty('info');
-      expect(level2).toHaveProperty('info');
-      expect(level3).toHaveProperty('info');
+      const spy = vi.spyOn(level2, 'child');
+      createChildLogger('query', level2);
+      expect(spy).toHaveBeenCalledWith({ name: 'app.database.query' });
     });
 
-    it('should use provided logger instance', () => {
+    it('should work with any provided logger instance', () => {
       const customLogger = winston.createLogger();
-      const childLogger = createChildLogger('custom', customLogger);
-      expect(childLogger).toBeDefined();
-    });
-
-    it('should use default LoggerInstance when no logger provided', () => {
-      const childLogger = createChildLogger('default');
-      expect(childLogger).toBeDefined();
-    });
-  });
-
-  describe('configure', () => {
-    it('should configure the logger with provided config', () => {
-      const config: LoggerInstanceConfig = {
-        level: 'debug',
-        levels: undefined,
-      };
-      expect(() => configure(config)).not.toThrow();
-    });
-
-    it('should accept config with level property', () => {
-      const config: LoggerInstanceConfig = {
-        level: 'warn',
-        levels: undefined,
-      };
-      expect(() => configure(config)).not.toThrow();
-    });
-  });
-
-  describe('getLogger', () => {
-    it('should return a logger instance', () => {
-      const logger = getLogger();
-      expect(logger).toBeDefined();
-      expect(logger).toHaveProperty('info');
-      expect(logger).toHaveProperty('error');
-      expect(logger).toHaveProperty('warn');
-      expect(logger).toHaveProperty('debug');
-    });
-
-    it('should return the same instance on multiple calls', () => {
-      const logger1 = getLogger();
-      const logger2 = getLogger();
-      expect(logger1).toBe(logger2);
-    });
-
-    it('should have all custom levels registered', () => {
-      const logger = getLogger();
-      expect(logger.levels).toEqual(customLevels);
+      const spy = vi.spyOn(customLogger, 'child');
+      createChildLogger('custom', customLogger);
+      expect(spy).toHaveBeenCalledWith({ name: 'custom' });
     });
   });
 
   describe('updateLogLevel', () => {
-    it('should update log level on provided logger', () => {
+    it('should update log level on the provided logger', () => {
       updateLogLevel('debug', testLogger);
       expect(testLogger.level).toBe('debug');
     });
@@ -131,66 +77,10 @@ describe('Logger Module', () => {
       expect(testLogger.level).toBe('warn');
     });
 
-    it('should use default LoggerInstance when no logger provided', () => {
-      expect(() => updateLogLevel('info')).not.toThrow();
-    });
-  });
-
-  describe('addErrorFileLogger', () => {
-    it('should add error file logger transport', () => {
-      addErrorFileLogger('/tmp/error.log', undefined, testLogger);
-      expect(testLogger.add).toHaveBeenCalled();
-      expect(testLogger.add).toHaveBeenCalledTimes(1);
-    });
-
-    it('should add error file logger with custom level', () => {
-      addErrorFileLogger('/tmp/error.log', 'error', testLogger);
-      expect(testLogger.add).toHaveBeenCalled();
-    });
-
-    it('should use default LoggerInstance when no logger provided', () => {
-      expect(() => addErrorFileLogger('/tmp/error.log')).not.toThrow();
-    });
-
-    it('should create file transport with correct filename', () => {
-      const filename = '/tmp/test-error.log';
-      addErrorFileLogger(filename, 'error', testLogger);
-
-      expect(testLogger.add).toHaveBeenCalled();
-      const callArgs = (testLogger.add as any).mock.calls[0][0];
-      expect(callArgs).toBeDefined();
-      // Winston File transport normalizes the filename
-      expect(callArgs.filename).toContain('test-error.log');
-      expect(callArgs.level).toBe('error');
-    });
-  });
-
-  describe('addJsonLinesFileLogger', () => {
-    it('should add JSON lines file logger transport', () => {
-      addJsonLinesFileLogger('/tmp/logs.jsonl', undefined, testLogger);
-      expect(testLogger.add).toHaveBeenCalled();
-      expect(testLogger.add).toHaveBeenCalledTimes(1);
-    });
-
-    it('should add JSON lines file logger with custom level', () => {
-      addJsonLinesFileLogger('/tmp/logs.jsonl', 'info', testLogger);
-      expect(testLogger.add).toHaveBeenCalled();
-    });
-
-    it('should use default LoggerInstance when no logger provided', () => {
-      expect(() => addJsonLinesFileLogger('/tmp/logs.jsonl')).not.toThrow();
-    });
-
-    it('should create file transport with correct filename', () => {
-      const filename = '/tmp/test-logs.jsonl';
-      addJsonLinesFileLogger(filename, 'info', testLogger);
-
-      expect(testLogger.add).toHaveBeenCalled();
-      const callArgs = (testLogger.add as any).mock.calls[0][0];
-      expect(callArgs).toBeDefined();
-      // Winston File transport normalizes the filename
-      expect(callArgs.filename).toContain('test-logs.jsonl');
-      expect(callArgs.level).toBe('info');
+    it('should overwrite a previously-set level', () => {
+      updateLogLevel('debug', testLogger);
+      updateLogLevel('error', testLogger);
+      expect(testLogger.level).toBe('error');
     });
   });
 
@@ -210,76 +100,43 @@ describe('Logger Module', () => {
       }
     });
 
-    it('should add Grafana Loki logger transport with url in options', () => {
-      addGrafanaLokiLogger(
-        'test-app',
-        { url: 'http://localhost:3100' },
-        testLogger
-      );
-      expect(testLogger.add).toHaveBeenCalled();
-      expect(testLogger.add).toHaveBeenCalledTimes(1);
+    it('should return a LokiTransport when url is provided in options', () => {
+      const transport = addGrafanaLokiLogger('test-app', { url: 'http://localhost:3100' });
+      expect(transport).toBeInstanceOf(LokiTransport);
     });
 
-    it('should add Grafana Loki logger with custom level', () => {
-      addGrafanaLokiLogger(
-        'test-app',
-        { url: 'http://localhost:3100', level: 'info' },
-        testLogger
-      );
-      expect(testLogger.add).toHaveBeenCalled();
+    it('should apply the job label from appName', () => {
+      const transport = addGrafanaLokiLogger('my-app', { url: 'http://localhost:3100' }) as any;
+      expect(transport.labels).toEqual({ job: 'my-app' });
     });
 
-    it('should use default LoggerInstance when no logger provided', () => {
-      process.env.LOGGER_GRAFANA_URL = 'http://localhost:3100';
-      expect(() => addGrafanaLokiLogger('test-app')).not.toThrow();
+    it('should apply a custom level when provided', () => {
+      const transport = addGrafanaLokiLogger('test-app', { url: 'http://localhost:3100', level: 'debug' });
+      expect(transport.level).toBe('debug');
     });
 
-    it('should create Loki transport with correct labels and level', () => {
-      const appName = 'my-app';
-      const url = 'http://grafana.example.com:3100';
-      const level = 'debug';
-
-      addGrafanaLokiLogger(appName, { url, level }, testLogger);
-
-      expect(testLogger.add).toHaveBeenCalled();
-      const callArgs = (testLogger.add as any).mock.calls[0][0];
-      expect(callArgs).toBeDefined();
-      // Verify the transport was created with the correct configuration
-      expect(callArgs.labels).toEqual({ job: appName });
-      expect(callArgs.level).toBe(level);
-      // Verify it has a format (indicating it's properly configured)
-      expect(callArgs.format).toBeDefined();
+    it('should have a format configured', () => {
+      const transport = addGrafanaLokiLogger('test-app', { url: 'http://localhost:3100' });
+      expect(transport.format).toBeDefined();
     });
 
     it('should throw InvalidGrafanaConfig when url is not provided', () => {
-      expect(() => addGrafanaLokiLogger('test-app', {}, testLogger)).toThrow(
-        InvalidGrafanaConfig
-      );
+      expect(() => addGrafanaLokiLogger('test-app', {})).toThrow(InvalidGrafanaConfig);
     });
 
     it('should throw InvalidGrafanaConfig when url is empty string', () => {
-      expect(() =>
-        addGrafanaLokiLogger('test-app', { url: '' }, testLogger)
-      ).toThrow(InvalidGrafanaConfig);
+      expect(() => addGrafanaLokiLogger('test-app', { url: '' })).toThrow(InvalidGrafanaConfig);
     });
 
-    it('should use environment variable LOGGER_GRAFANA_URL when options.url is not provided', () => {
+    it('should use LOGGER_GRAFANA_URL env var when options.url is not provided', () => {
       process.env.LOGGER_GRAFANA_URL = 'http://env-grafana:3100';
-
-      expect(() =>
-        addGrafanaLokiLogger('test-app', {}, testLogger)
-      ).not.toThrow();
-      expect(testLogger.add).toHaveBeenCalled();
+      expect(() => addGrafanaLokiLogger('test-app', {})).not.toThrow();
     });
 
-    it('should prefer options.url over environment variable', () => {
+    it('should prefer options.url over LOGGER_GRAFANA_URL env var', () => {
       process.env.LOGGER_GRAFANA_URL = 'http://env-grafana:3100';
-      const optionsUrl = 'http://options-grafana:3100';
-
-      expect(() =>
-        addGrafanaLokiLogger('test-app', { url: optionsUrl }, testLogger)
-      ).not.toThrow();
-      expect(testLogger.add).toHaveBeenCalled();
+      const transport = addGrafanaLokiLogger('test-app', { url: 'http://options-grafana:3100' });
+      expect(transport).toBeInstanceOf(LokiTransport);
     });
   });
 
@@ -299,72 +156,167 @@ describe('Logger Module', () => {
       }
     });
 
-    it('should set log level from valid config', () => {
-      configureFromSchema('test-app', { level: 'debug' }, testLogger);
-      expect(testLogger.level).toBe('debug');
+    it('should return a logger with the level from config', () => {
+      const result = configureFromSchema('test-app', { level: 'debug' });
+      expect(result.level).toBe('debug');
     });
 
-    it('should return the parsed config', () => {
-      const result = configureFromSchema('test-app', { level: 'warn' }, testLogger);
-      expect(result.level).toBe('warn');
-    });
-
-    it('should apply default level "info" when level is omitted', () => {
-      configureFromSchema('test-app', {}, testLogger);
-      expect(testLogger.level).toBe('info');
+    it('should return a logger with default level "info" when level is omitted', () => {
+      const result = configureFromSchema('test-app', {});
+      expect(result.level).toBe('info');
     });
 
     it('should throw ZodError for an invalid level value', () => {
-      expect(() =>
-        configureFromSchema('test-app', { level: 'invalid-level' }, testLogger)
-      ).toThrow(ZodError);
+      expect(() => configureFromSchema('test-app', { level: 'invalid-level' })).toThrow(ZodError);
     });
 
     it('should throw ZodError when grafana.url is not a valid URL', () => {
       expect(() =>
-        configureFromSchema(
-          'test-app',
-          { level: 'info', grafana: { url: 'not-a-url' } },
-          testLogger
-        )
+        configureFromSchema('test-app', { level: 'info', grafana: { url: 'not-a-url' } })
       ).toThrow(ZodError);
     });
 
     it('should throw ZodError when grafana is provided without a URL and no env var is set', () => {
-      expect(() =>
-        configureFromSchema('test-app', { grafana: {} }, testLogger)
-      ).toThrow(ZodError);
+      expect(() => configureFromSchema('test-app', { grafana: {} })).toThrow(ZodError);
     });
 
-    it('should succeed when grafana is provided without url but LOGGER_GRAFANA_URL env var is set', () => {
+    it('should not throw when grafana is provided without url but LOGGER_GRAFANA_URL env var is set', () => {
       process.env.LOGGER_GRAFANA_URL = 'http://localhost:3100';
-      expect(() =>
-        configureFromSchema('test-app', { grafana: {} }, testLogger)
-      ).not.toThrow();
+      expect(() => configureFromSchema('test-app', { grafana: {} })).not.toThrow();
     });
 
-    it('should add a Grafana transport when grafana config is present', () => {
-      configureFromSchema(
-        'test-app',
-        { level: 'info', grafana: { url: 'http://localhost:3100' } },
-        testLogger
-      );
-      expect(testLogger.add).toHaveBeenCalledTimes(1);
+    it('should return a logger instance with info/error/warn/debug methods', () => {
+      const result = configureFromSchema('test-app', {});
+      expect(typeof result.info).toBe('function');
+      expect(typeof result.error).toBe('function');
+      expect(typeof result.warn).toBe('function');
+      expect(typeof result.debug).toBe('function');
     });
 
-    it('should not add a Grafana transport when grafana config is absent', () => {
-      configureFromSchema('test-app', { level: 'info' }, testLogger);
-      expect(testLogger.add).not.toHaveBeenCalled();
+    describe('grafana transport', () => {
+      it('should add a Loki transport when grafana config is present', () => {
+        const result = configureFromSchema('test-app', {
+          level: 'info',
+          grafana: { url: 'http://localhost:3100' },
+        });
+        expect(result.transports.some((t) => t instanceof LokiTransport)).toBe(true);
+      });
+
+      it('should not add a Loki transport when grafana config is absent', () => {
+        const result = configureFromSchema('test-app', { level: 'info' });
+        expect(result.transports.some((t) => t instanceof LokiTransport)).toBe(false);
+      });
+
+      it('should pass appName as the Grafana job label', () => {
+        const result = configureFromSchema('my-service', {
+          level: 'info',
+          grafana: { url: 'http://localhost:3100' },
+        });
+        const loki = result.transports.find((t) => t instanceof LokiTransport) as any;
+        expect(loki.labels).toEqual({ job: 'my-service' });
+      });
     });
 
-    it('should pass appName as the Grafana job label', () => {
-      configureFromSchema(
-        'my-service',
-        { level: 'info', grafana: { url: 'http://localhost:3100' } },
-        testLogger
-      );
-      const callArgs = (testLogger.add as any).mock.calls[0][0];
-      expect(callArgs.labels).toEqual({ job: 'my-service' });
+    describe('console transport', () => {
+      it('should add a Console transport when console.enabled is true', () => {
+        const result = configureFromSchema('test-app', { console: { enabled: true } });
+        expect(result.transports.some((t) => t instanceof winston.transports.Console)).toBe(true);
+      });
+
+      it('should not add a Console transport when console.enabled is false', () => {
+        const result = configureFromSchema('test-app', { console: { enabled: false } });
+        expect(result.transports.some((t) => t instanceof winston.transports.Console)).toBe(false);
+      });
+
+      it('should not add a Console transport when console config is absent', () => {
+        const result = configureFromSchema('test-app', {});
+        expect(result.transports.some((t) => t instanceof winston.transports.Console)).toBe(false);
+      });
+
+      it('should forward console.level to the Console transport', () => {
+        const result = configureFromSchema('test-app', { console: { enabled: true, level: 'warn' } });
+        const consoleTrans = result.transports.find((t) => t instanceof winston.transports.Console);
+        expect(consoleTrans?.level).toBe('warn');
+      });
+    });
+
+    describe('file.log transport', () => {
+      it('should add a File transport when file.log is enabled with a filename', () => {
+        const result = configureFromSchema('test-app', {
+          file: { log: { enabled: true, filename: '/tmp/app.log' } },
+        });
+        const fileTransports = result.transports.filter((t) => t instanceof winston.transports.File);
+        expect(fileTransports).toHaveLength(1);
+      });
+
+      it('should not add a File transport when file.log.enabled is false', () => {
+        const result = configureFromSchema('test-app', {
+          file: { log: { enabled: false, filename: '/tmp/app.log' } },
+        });
+        expect(result.transports.some((t) => t instanceof winston.transports.File)).toBe(false);
+      });
+
+      it('should not add a File transport when file.log is absent', () => {
+        const result = configureFromSchema('test-app', {});
+        expect(result.transports.some((t) => t instanceof winston.transports.File)).toBe(false);
+      });
+
+      it('should forward file.log.filename to the File transport', () => {
+        const result = configureFromSchema('test-app', {
+          file: { log: { enabled: true, filename: '/tmp/app.log' } },
+        });
+        const fileTrans = result.transports.find((t) => t instanceof winston.transports.File) as any;
+        expect(fileTrans.filename).toContain('app.log');
+      });
+    });
+
+    describe('file.error transport', () => {
+      it('should add a File transport with level "error" when file.error is enabled', () => {
+        const result = configureFromSchema('test-app', {
+          file: { error: { enabled: true, filename: '/tmp/error.log' } },
+        });
+        const errorTransport = result.transports.find(
+          (t) => t instanceof winston.transports.File && t.level === 'error'
+        );
+        expect(errorTransport).toBeDefined();
+      });
+
+      it('should not add a File transport when file.error.enabled is false', () => {
+        const result = configureFromSchema('test-app', {
+          file: { error: { enabled: false, filename: '/tmp/error.log' } },
+        });
+        expect(result.transports.some((t) => t instanceof winston.transports.File)).toBe(false);
+      });
+
+      it('should not add a File transport when file.error is absent', () => {
+        const result = configureFromSchema('test-app', {});
+        expect(result.transports.some((t) => t instanceof winston.transports.File)).toBe(false);
+      });
+
+      it('should forward file.error.filename to the error File transport', () => {
+        const result = configureFromSchema('test-app', {
+          file: { error: { enabled: true, filename: '/tmp/error.log' } },
+        });
+        const fileTrans = result.transports.find((t) => t instanceof winston.transports.File) as any;
+        expect(fileTrans.filename).toContain('error.log');
+      });
+
+      it('should add two File transports when both file.log and file.error are enabled', () => {
+        const result = configureFromSchema('test-app', {
+          file: {
+            log: { enabled: true, filename: '/tmp/app.log' },
+            error: { enabled: true, filename: '/tmp/error.log' },
+          },
+        });
+        const fileTransports = result.transports.filter((t) => t instanceof winston.transports.File);
+        expect(fileTransports).toHaveLength(2);
+      });
+    });
+
+    it('should register customLevels on the returned logger', () => {
+      const result = configureFromSchema('test-app', {});
+      expect(result.levels).toEqual(customLevels);
     });
   });
 });
+

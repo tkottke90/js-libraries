@@ -1,105 +1,36 @@
-import winston, { Logger, LoggerOptions, format, transports } from 'winston';
-import LokiTransport from 'winston-loki';
-import { InvalidGrafanaConfig } from './errors.js';
-import { LoggerConfig, LoggerConfigSchema, customLevels, levelColors } from './logger.schema.js';
-const { combine, timestamp, json, errors, simple } = format;
+import winston, { Logger, LoggerOptions } from 'winston';
+import { customLevels, levelColors } from './constants.js';
+import { LoggerConfigSchema } from './logger.schema.js';
+import { addConsoleLogger } from './transports/console.js';
+import { addGrafanaLokiLogger } from './transports/grafana-loki.js';
+import { addErrorFileLogger, addFileLogger } from './transports/json-lines.js';
 
 // Register colors for the custom levels so colorized transports work correctly
 winston.addColors(levelColors);
-
-const LoggerInstance = winston.createLogger({
-  levels: customLevels,
-});
 
 export interface LoggerInstanceConfig {
   level: LoggerOptions['level'];
   levels?: LoggerOptions['levels'];
 }
 
-export function addErrorFileLogger(
-  filename: string,
-  level?: string,
-  logger: Logger = LoggerInstance
-) {
-  logger.add(
-    new transports.File({
-      filename,
-      format: combine(simple(), errors(), timestamp()),
-      level: level ?? logger.level,
-    })
-  );
-}
-
-interface GrafanaLokiLoggerOptions {
-  url?: string;
-  level?: string;
-}
-
-export function addGrafanaLokiLogger(
-  appName: string,
-  options?: GrafanaLokiLoggerOptions,
-  logger: Logger = LoggerInstance
-) {
-  const url = process.env.LOGGER_GRAFANA_URL ?? options?.url ?? '';
-
-  if (!url) {
-    throw new InvalidGrafanaConfig(
-      'Missing URL - Please provide the url in the environment (as LOGGER_GRAFANA_URL) or in the options.url property'
-    );
-  }
-
-  logger.add(
-    new LokiTransport({
-      host: url,
-      json: true,
-      labels: { job: appName },
-      format: combine(timestamp(), json()),
-      level: options?.level ?? logger.level,
-    })
-  );
-}
-
-export function addJsonLinesFileLogger(
-  filename: string,
-  level?: string,
-  logger: Logger = LoggerInstance
-) {
-  logger.add(
-    new transports.File({
-      filename,
-      format: combine(timestamp(), json()),
-      level: level ?? logger.level,
-    })
-  );
-}
+// Tracks names assigned by createChildLogger so hierarchical names can be built
+// across multiple levels without relying on Winston internals.
+const loggerNames = new WeakMap<object, string>();
 
 export function createChildLogger(
   name: string,
-  logger: Logger = LoggerInstance
+  logger: Logger
 ) {
-  // Get the parent logger's name from its metadata if it exists
-  const parentName = logger.data?.name;
-
-  // Append the new name to the parent name if parent name exists
+  const parentName = loggerNames.get(logger);
   const childName = parentName ? `${parentName}.${name}` : name;
-
-  return logger.child({ name: childName });
-}
-
-export function configure(config: LoggerInstanceConfig) {
-  LoggerInstance.configure({
-    ...config,
-    levels: config.levels ?? customLevels,
-  });
-}
-
-export function getLogger() {
-  return LoggerInstance;
+  const child = logger.child({ name: childName });
+  loggerNames.set(child, childName);
+  return child;
 }
 
 export function updateLogLevel(
   newLevel: string,
-  logger: Logger = LoggerInstance
+  logger: Logger
 ) {
   logger.level = newLevel;
 }
@@ -107,15 +38,37 @@ export function updateLogLevel(
 export function configureFromSchema(
   appName: string,
   raw: unknown,
-  logger: Logger = LoggerInstance
-): LoggerConfig {
+) {
   const config = LoggerConfigSchema.parse(raw);
 
-  logger.level = config.level;
+  const transports: winston.transport[] = [];
 
   if (config.grafana) {
-    addGrafanaLokiLogger(appName, config.grafana, logger);
+    transports.push(addGrafanaLokiLogger(appName, config.grafana));
   }
 
-  return config;
+  if (config.console?.enabled) {
+    transports.push(addConsoleLogger(config.console));
+  }
+
+  if (config.file?.log?.enabled && config.file.log.filename) {
+    transports.push(addFileLogger(config.file.log.filename, { level: config.file.log.level }));
+  }
+
+  if (config.file?.error?.enabled && config.file.error.filename) {
+    transports.push(addErrorFileLogger(config.file.error.filename, { level: config.file.error.level }));
+  }
+  
+  const LoggerInstance = winston.createLogger({
+    levels: customLevels,
+    level: config.level,
+    transports,
+  });
+
+  LoggerInstance.child = (options: object) => {
+    return createChildLogger((options as Record<string, string>)['name'] || 'logger', LoggerInstance);
+  }
+
+  return LoggerInstance;
 }
+

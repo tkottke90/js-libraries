@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { GrafanaLokiConfigSchema, LoggerConfigSchema, defaultLevels } from './logger.schema.js';
+import { defaultLevels } from './constants.js';
+import { LoggerConfigSchema } from './logger.schema.js';
+import { GrafanaLokiConfigSchema } from './transports/grafana-loki.js';
 
 describe('LoggerConfigSchema', () => {
   let originalGrafanaUrl: string | undefined;
@@ -63,6 +65,146 @@ describe('LoggerConfigSchema', () => {
   it('should pass when grafana is provided without url but LOGGER_GRAFANA_URL env var is set', () => {
     process.env.LOGGER_GRAFANA_URL = 'http://localhost:3100';
     expect(() => LoggerConfigSchema.parse({ grafana: {} })).not.toThrow();
+  });
+});
+
+describe('LoggerConfigSchema — console config', () => {
+  it('should be absent when not provided', () => {
+    const result = LoggerConfigSchema.parse({});
+    expect(result.console).toBeUndefined();
+  });
+
+  it('should default enabled to true when console object is present', () => {
+    const result = LoggerConfigSchema.parse({ console: {} });
+    expect(result.console?.enabled).toBe(true);
+  });
+
+  it('should accept explicit enabled: false', () => {
+    const result = LoggerConfigSchema.parse({ console: { enabled: false } });
+    expect(result.console?.enabled).toBe(false);
+  });
+
+  it('should accept an optional level override', () => {
+    const result = LoggerConfigSchema.parse({ console: { enabled: true, level: 'debug' } });
+    expect(result.console?.level).toBe('debug');
+  });
+
+  it('should throw for an invalid console level', () => {
+    expect(() => LoggerConfigSchema.parse({ console: { level: 'verbose' } })).toThrow();
+  });
+});
+
+describe('LoggerConfigSchema — file.log config', () => {
+  it('should be absent when file is not provided', () => {
+    const result = LoggerConfigSchema.parse({});
+    expect(result.file?.log).toBeUndefined();
+  });
+
+  it('should accept a valid file.log config', () => {
+    const result = LoggerConfigSchema.parse({ file: { log: { filename: '/tmp/app.log' } } });
+    expect(result.file?.log?.filename).toBe('/tmp/app.log');
+  });
+
+  it('should default enabled to true', () => {
+    const result = LoggerConfigSchema.parse({ file: { log: { filename: '/tmp/app.log' } } });
+    expect(result.file?.log?.enabled).toBe(true);
+  });
+
+  it('should accept enabled: false', () => {
+    const result = LoggerConfigSchema.parse({
+      file: { log: { enabled: false, filename: '/tmp/app.log' } },
+    });
+    expect(result.file?.log?.enabled).toBe(false);
+  });
+
+  it('should throw when filename is missing', () => {
+    expect(() => LoggerConfigSchema.parse({ file: { log: { enabled: true } } })).toThrow();
+  });
+
+  it('should accept an optional level override', () => {
+    const result = LoggerConfigSchema.parse({
+      file: { log: { filename: '/tmp/app.log', level: 'warn' } },
+    });
+    expect(result.file?.log?.level).toBe('warn');
+  });
+
+  it('should throw for an invalid level override', () => {
+    expect(() =>
+      LoggerConfigSchema.parse({ file: { log: { filename: '/tmp/app.log', level: 'verbose' } } })
+    ).toThrow();
+  });
+});
+
+describe('LoggerConfigSchema — file.error config', () => {
+  it('should be absent when file is not provided', () => {
+    const result = LoggerConfigSchema.parse({});
+    expect(result.file?.error).toBeUndefined();
+  });
+
+  it('should accept a valid file.error config', () => {
+    const result = LoggerConfigSchema.parse({ file: { error: { filename: '/tmp/error.log' } } });
+    expect(result.file?.error?.filename).toBe('/tmp/error.log');
+  });
+
+  it('should default enabled to true', () => {
+    const result = LoggerConfigSchema.parse({ file: { error: { filename: '/tmp/error.log' } } });
+    expect(result.file?.error?.enabled).toBe(true);
+  });
+
+  it('should accept enabled: false', () => {
+    const result = LoggerConfigSchema.parse({
+      file: { error: { enabled: false, filename: '/tmp/error.log' } },
+    });
+    expect(result.file?.error?.enabled).toBe(false);
+  });
+
+  it('should throw when filename is missing', () => {
+    expect(() => LoggerConfigSchema.parse({ file: { error: { enabled: true } } })).toThrow();
+  });
+
+  it('should accept an optional level override', () => {
+    const result = LoggerConfigSchema.parse({
+      file: { error: { filename: '/tmp/error.log', level: 'error' } },
+    });
+    expect(result.file?.error?.level).toBe('error');
+  });
+
+  it('should throw for an invalid level override', () => {
+    expect(() =>
+      LoggerConfigSchema.parse({
+        file: { error: { filename: '/tmp/error.log', level: 'verbose' } },
+      })
+    ).toThrow();
+  });
+});
+
+describe('LoggerConfigSchema — file key independence', () => {
+  it('should allow file.log without file.error', () => {
+    expect(() =>
+      LoggerConfigSchema.parse({ file: { log: { filename: '/tmp/app.log' } } })
+    ).not.toThrow();
+  });
+
+  it('should allow file.error without file.log', () => {
+    expect(() =>
+      LoggerConfigSchema.parse({ file: { error: { filename: '/tmp/error.log' } } })
+    ).not.toThrow();
+  });
+
+  it('should allow both file.log and file.error together', () => {
+    expect(() =>
+      LoggerConfigSchema.parse({
+        file: {
+          log: { filename: '/tmp/app.log' },
+          error: { filename: '/tmp/error.log' },
+        },
+      })
+    ).not.toThrow();
+  });
+
+  it('should be absent entirely when file is not provided', () => {
+    const result = LoggerConfigSchema.parse({});
+    expect(result.file).toBeUndefined();
   });
 });
 
