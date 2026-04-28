@@ -268,6 +268,35 @@ describe('Logger Module', () => {
         const fileTrans = result.transports.find((t) => t instanceof winston.transports.File) as any;
         expect(fileTrans.filename).toContain('app.log');
       });
+
+      it('should resolve file.log.filename relative to baseUrl when baseUrl is provided', () => {
+        const result = configureFromSchema('test-app', {
+          file: { log: { enabled: true, filename: 'resolved.log' } },
+          baseUrl: '/tmp',
+        });
+        const fileTrans = result.transports.find((t) => t instanceof winston.transports.File) as any;
+        expect(fileTrans.dirname).toBe('/tmp');
+        expect(fileTrans.filename).toBe('resolved.log');
+      });
+
+      it('should not modify file.log.filename when baseUrl is absent', () => {
+        const result = configureFromSchema('test-app', {
+          file: { log: { enabled: true, filename: '/tmp/app.log' } },
+        });
+        const fileTrans = result.transports.find((t) => t instanceof winston.transports.File) as any;
+        expect(fileTrans.dirname).toBe('/tmp');
+        expect(fileTrans.filename).toBe('app.log');
+      });
+
+      it('should pass absolute file.log.filename unchanged when baseUrl is set', () => {
+        const result = configureFromSchema('test-app', {
+          file: { log: { enabled: true, filename: '/tmp/app.log' } },
+          baseUrl: '/tmp/sub',
+        });
+        const fileTrans = result.transports.find((t) => t instanceof winston.transports.File) as any;
+        expect(fileTrans.dirname).toBe('/tmp');
+        expect(fileTrans.filename).toBe('app.log');
+      });
     });
 
     describe('file.error transport', () => {
@@ -301,6 +330,35 @@ describe('Logger Module', () => {
         expect(fileTrans.filename).toContain('error.log');
       });
 
+      it('should resolve file.error.filename relative to baseUrl when baseUrl is provided', () => {
+        const result = configureFromSchema('test-app', {
+          file: { error: { enabled: true, filename: 'resolved-error.log' } },
+          baseUrl: '/tmp',
+        });
+        const fileTrans = result.transports.find((t) => t instanceof winston.transports.File) as any;
+        expect(fileTrans.dirname).toBe('/tmp');
+        expect(fileTrans.filename).toBe('resolved-error.log');
+      });
+
+      it('should not modify file.error.filename when baseUrl is absent', () => {
+        const result = configureFromSchema('test-app', {
+          file: { error: { enabled: true, filename: '/tmp/error.log' } },
+        });
+        const fileTrans = result.transports.find((t) => t instanceof winston.transports.File) as any;
+        expect(fileTrans.dirname).toBe('/tmp');
+        expect(fileTrans.filename).toBe('error.log');
+      });
+
+      it('should pass absolute file.error.filename unchanged when baseUrl is set', () => {
+        const result = configureFromSchema('test-app', {
+          file: { error: { enabled: true, filename: '/tmp/error.log' } },
+          baseUrl: '/tmp/sub',
+        });
+        const fileTrans = result.transports.find((t) => t instanceof winston.transports.File) as any;
+        expect(fileTrans.dirname).toBe('/tmp');
+        expect(fileTrans.filename).toBe('error.log');
+      });
+
       it('should add two File transports when both file.log and file.error are enabled', () => {
         const result = configureFromSchema('test-app', {
           file: {
@@ -310,6 +368,23 @@ describe('Logger Module', () => {
         });
         const fileTransports = result.transports.filter((t) => t instanceof winston.transports.File);
         expect(fileTransports).toHaveLength(2);
+      });
+    });
+
+    describe('baseUrl with both file transports', () => {
+      it('should resolve both file.log and file.error filenames when baseUrl is provided', () => {
+        const result = configureFromSchema('test-app', {
+          baseUrl: '/tmp',
+          file: {
+            log: { enabled: true, filename: 'app.log' },
+            error: { enabled: true, filename: 'error.log' },
+          },
+        });
+        const fileTransports = result.transports.filter((t) => t instanceof winston.transports.File) as any[];
+        expect(fileTransports).toHaveLength(2);
+        for (const t of fileTransports) {
+          expect(t.dirname).toBe('/tmp');
+        }
       });
     });
 

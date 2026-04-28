@@ -10,6 +10,12 @@ export const LoggerConfigSchema = z
       .enum(defaultLevels)
       .default('info')
       .describe('Minimum log level for the logger instance.'),
+    baseUrl: z
+      .string()
+      .optional()
+      .describe(
+        'Base directory for file transports. When set, file.x.filename is resolved relative to this path.'
+      ),
     console: ConsoleConfigSchema.optional().describe(
       'When provided, configures the console transport.'
     ),

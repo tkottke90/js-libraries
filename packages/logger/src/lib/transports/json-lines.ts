@@ -10,7 +10,7 @@ export const JSON_LINES_FORMAT = winston.format.combine(
 export const FileConfigSchema = z.object({
   enabled: z.boolean().default(true).describe('Enable or disable file logging.'),
   level: z.enum(defaultLevels).optional().describe('Override log level for the file transport.'),
-  filename: z.string().describe('Path to the log file.'),
+  filename: z.string().describe('Filename or path of the log file. When a baseUrl is configured on the logger, this value is resolved relative to it.'),
 });
 
 export function addFileLogger(

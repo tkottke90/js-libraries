@@ -239,3 +239,50 @@ describe('GrafanaLokiConfigSchema', () => {
     ).toThrow();
   });
 });
+
+describe('LoggerConfigSchema — baseUrl config', () => {
+  it('should be absent when baseUrl is not provided', () => {
+    const result = LoggerConfigSchema.parse({});
+    expect(result.baseUrl).toBeUndefined();
+  });
+
+  it('should accept a valid absolute baseUrl string', () => {
+    const result = LoggerConfigSchema.parse({ baseUrl: '/var/log' });
+    expect(result.baseUrl).toBe('/var/log');
+  });
+
+  it('should accept a relative path as baseUrl', () => {
+    expect(() => LoggerConfigSchema.parse({ baseUrl: './logs' })).not.toThrow();
+  });
+
+  it('should parse baseUrl alongside file.log config', () => {
+    const result = LoggerConfigSchema.parse({
+      baseUrl: '/var/log',
+      file: { log: { filename: 'app.log' } },
+    });
+    expect(result.baseUrl).toBe('/var/log');
+    expect(result.file?.log?.filename).toBe('app.log');
+  });
+
+  it('should parse baseUrl alongside file.error config', () => {
+    const result = LoggerConfigSchema.parse({
+      baseUrl: '/var/log',
+      file: { error: { filename: 'error.log' } },
+    });
+    expect(result.baseUrl).toBe('/var/log');
+    expect(result.file?.error?.filename).toBe('error.log');
+  });
+
+  it('should parse baseUrl alongside both file.log and file.error', () => {
+    const result = LoggerConfigSchema.parse({
+      baseUrl: '/var/log',
+      file: {
+        log: { filename: 'app.log' },
+        error: { filename: 'error.log' },
+      },
+    });
+    expect(result.baseUrl).toBe('/var/log');
+    expect(result.file?.log?.filename).toBe('app.log');
+    expect(result.file?.error?.filename).toBe('error.log');
+  });
+});

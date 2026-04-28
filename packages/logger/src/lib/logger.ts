@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import winston, { Logger, LoggerOptions } from 'winston';
 import { customLevels, levelColors } from './constants.js';
 import { LoggerConfigSchema } from './logger.schema.js';
@@ -41,6 +42,9 @@ export function configureFromSchema(
 ) {
   const config = LoggerConfigSchema.parse(raw);
 
+  const resolveFilename = (filename: string) =>
+    config.baseUrl ? resolve(config.baseUrl, filename) : filename;
+
   const transports: winston.transport[] = [];
 
   if (config.grafana) {
@@ -52,11 +56,11 @@ export function configureFromSchema(
   }
 
   if (config.file?.log?.enabled && config.file.log.filename) {
-    transports.push(addFileLogger(config.file.log.filename, { level: config.file.log.level }));
+    transports.push(addFileLogger(resolveFilename(config.file.log.filename), { level: config.file.log.level }));
   }
 
   if (config.file?.error?.enabled && config.file.error.filename) {
-    transports.push(addErrorFileLogger(config.file.error.filename, { level: config.file.error.level }));
+    transports.push(addErrorFileLogger(resolveFilename(config.file.error.filename), { level: config.file.error.level }));
   }
   
   const LoggerInstance = winston.createLogger({
