@@ -1,0 +1,39 @@
+name: 'Setup Node.js with NPM User Auth'
+description: 'Sets up Node.js, configures npm to target a private registry, generates an auth token from username and password, and installs dependencies'
+
+inputs:
+  username:
+    description: 'NPM registry username'
+    required: true
+  password:
+    description: 'NPM registry password'
+    required: true
+  registry:
+    description: 'NPM registry URL (e.g. https://registry.example.com)'
+    required: true
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: 'lts/*'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+
+    - name: Configure npm registry and auth token
+      shell: bash
+      run: |
+        REGISTRY_HOST=$(echo "${{ inputs.registry }}" | sed 's|https\?://||')
+        AUTH_TOKEN=$(echo -n "${{ inputs.username }}:${{ inputs.password }}" | base64)
+        echo "::add-mask::${AUTH_TOKEN}"
+        echo "registry=${{ inputs.registry }}" >> ~/.npmrc
+        echo "//${REGISTRY_HOST}/:_auth=${AUTH_TOKEN}" >> ~/.npmrc
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
