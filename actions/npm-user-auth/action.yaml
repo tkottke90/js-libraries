@@ -30,6 +30,7 @@ runs:
       run: |
         REGISTRY_HOST=$(echo "${{ inputs.registry }}" | sed 's|https\?://||')
         AUTH_TOKEN=$(echo -n "${{ inputs.username }}:${{ inputs.password }}" | base64)
+        echo "::add-mask::${AUTH_TOKEN}"
         echo "registry=${{ inputs.registry }}" >> ~/.npmrc
         echo "//${REGISTRY_HOST}/:_auth=${AUTH_TOKEN}" >> ~/.npmrc
 
