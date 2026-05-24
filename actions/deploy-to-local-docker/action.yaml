@@ -1,0 +1,34 @@
+name: "Deploy to Local Docker Registry"
+description: "Authenticates to the homelab Zot registry and pushes a Docker image."
+
+inputs:
+  username:
+    description: "Zot registry username (matches your Authentik username)"
+    required: true
+  api-key:
+    description: "Zot API key generated from the registry UI under User Settings → API Keys"
+    required: true
+  image:
+    description: "Full image name and tag to push (e.g. my-app:latest or my-org/my-app:1.0.0)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Log in to homelab registry
+      shell: bash
+      run: |
+        echo "${{ inputs.api-key }}" | docker login docker.artifacts.tdkottke.com \
+          --username "${{ inputs.username }}" \
+          --password-stdin
+
+    - name: Push image
+      shell: bash
+      run: |
+        docker push docker.artifacts.tdkottke.com/${{ inputs.image }}
+
+    - name: Log out of registry
+      shell: bash
+      if: always()
+      run: |
+        docker logout docker.artifacts.tdkottke.com
