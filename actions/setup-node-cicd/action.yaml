@@ -19,7 +19,7 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
         cache: 'npm'
@@ -27,7 +27,7 @@ runs:
 
     - name: Verify Registry Token Validity  
       shell: bash
-      run: npm whoami --registry=https://npm.pkg.github.com
+      run: npm whoami --registry=${{ inputs.registry-url }}
       env:
         NODE_AUTH_TOKEN: ${{ inputs.node-auth-token }}
 
