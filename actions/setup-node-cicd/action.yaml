@@ -19,14 +19,21 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
         cache: 'npm'
         registry-url: ${{ inputs.registry-url }}
-        token: ${{ inputs.node-auth-token }}
+
+    - name: Verify Registry Token Validity  
+      shell: bash
+      run: npm whoami --registry=https://npm.pkg.github.com
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.node-auth-token }}
 
     - name: Install dependencies
       shell: bash
       run: |
         npm ci
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.node-auth-token }}
