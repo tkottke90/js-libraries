@@ -19,15 +19,14 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
         cache: 'npm'
         registry-url: ${{ inputs.registry-url }}
+        token: ${{ inputs.node-auth-token }}
 
     - name: Install dependencies
       shell: bash
       run: |
         npm ci
-      env:
-        NPM_AUTH_TOKEN: ${{ inputs.node-auth-token }}
