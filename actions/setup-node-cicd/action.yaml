@@ -25,6 +25,11 @@ runs:
         cache: 'npm'
         registry-url: ${{ inputs.registry-url }}
 
+    - name: Authenticate with Verdaccio
+      shell: bash
+      run: |
+        echo "//npm.artifacts.tdkottke.com/:_authToken=${{ inputs.node-auth-token }}" >> ~/.npmrc
+
     - name: Verify Registry Token Validity  
       shell: bash
       run: npm whoami --registry=${{ inputs.registry-url }}
