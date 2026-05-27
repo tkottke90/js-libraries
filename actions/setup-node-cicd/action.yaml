@@ -1,44 +1,40 @@
-name: 'Setup Node.js for CI/CD'
-description: 'Sets up Node.js with caching and private registry support for CI/CD workflows'
+name: Setup Node.js
+description: Install Node.js and configure the private npm registry
 
 inputs:
+  npm-token:
+    description: Auth token for the private npm registry
+    required: true
   node-version:
-    description: 'Node.js version to use'
-    required: false
-    default: 'lts/*'
-  registry-url:
-    description: 'Private NPM registry URL'
-    required: false
-    default: ''
-  node-auth-token:
-    description: 'Authentication token for private NPM registry'
-    required: false
-    default: ''
+    description: Node.js version to use
+    default: '24'
+
+outputs:
+  npmrc-path:
+    description: Path to the configured .npmrc file, for use with NPM_CONFIG_USERCONFIG
+    value: ${{ steps.write-npmrc.outputs.path }}
 
 runs:
-  using: 'composite'
+  using: composite
   steps:
     - name: Setup Node.js
       uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
         cache: 'npm'
-        registry-url: ${{ inputs.registry-url }}
+        package-manager-cache: true
 
-    - name: Authenticate with Verdaccio
+    - name: Setup npmrc
+      id: write-npmrc
       shell: bash
       run: |
-        echo "//npm.artifacts.tdkottke.com/:_authToken=${{ inputs.node-auth-token }}" >> ~/.npmrc
-
-    - name: Verify Registry Token Validity  
-      shell: bash
-      run: npm whoami --registry=${{ inputs.registry-url }}
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.node-auth-token }}
+        echo "registry=https://npm.artifacts.tdkottke.com" > /tmp/cicd.npmrc
+        echo "//npm.artifacts.tdkottke.com/:_authToken=${{ inputs.npm-token }}" >> /tmp/cicd.npmrc
+        echo "save-exact=true" >> /tmp/cicd.npmrc
+        echo "path=/tmp/cicd.npmrc" >> "$GITHUB_OUTPUT"
 
     - name: Install dependencies
       shell: bash
-      run: |
-        npm ci
+      run: npm ci
       env:
-        NODE_AUTH_TOKEN: ${{ inputs.node-auth-token }}
+        NPM_CONFIG_USERCONFIG: /tmp/cicd.npmrc
