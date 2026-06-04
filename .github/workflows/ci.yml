@@ -21,8 +21,13 @@ jobs:
 
       # Cache node_modules
       - name: Setup Node.js and install dependencies
-        uses: ./actions/setup-node-cicd
+        uses: tkottke90/js-libraries/actions/setup-node-cicd@3510e914a01ba743d09ad56557104fe23829c059
         with:
           registry-url: ${{ secrets.PRIVATE_NPM_REGISTRY }}
           node-auth-token: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
+
+      - name: Run tests
+        shell: bash
+        run: npx nx test
+
 
