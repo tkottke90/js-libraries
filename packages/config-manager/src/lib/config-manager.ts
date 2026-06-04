@@ -119,7 +119,13 @@ export class ConfigManagerImpl implements ConfigManager {
 
     const raw = readConfigFile(configPath);
     // Validate raw data so any write-back preserves ${VAR} tokens, not resolved secret values.
-    const validated = validateAndMigrate(raw, this._options.schema, configPath);
+    const validated = validateAndMigrate(
+      raw,
+      this._options.schema,
+      configPath,
+      this._options.writeBack ?? true,
+      this._options.onCorruptConfig ?? 'recover'
+    );
     const runtimeConfig = interpolateEnvVars(validated) as Record<string, unknown>;
 
     if (this._options.runtimeValues) {

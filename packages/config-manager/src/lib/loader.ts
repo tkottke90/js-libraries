@@ -13,7 +13,13 @@ export function loadConfig(options: LoadConfigOptions): ConfigManagerImpl {
   ensureConfigExists(configPath, options.schema);
 
   const raw = readConfigFile(configPath);
-  const validated = validateAndMigrate(raw, options.schema, configPath);
+  const validated = validateAndMigrate(
+    raw,
+    options.schema,
+    configPath,
+    options.writeBack ?? true,
+    options.onCorruptConfig ?? 'recover'
+  );
   const runtimeConfig = interpolateEnvVars(validated) as Record<string, unknown>;
 
   if (options.runtimeValues) {

@@ -10,6 +10,9 @@ A file-based configuration manager for Node.js applications. Reads YAML or JSON 
 - [Quick Start](#quick-start)
 - [Schema Setup](#schema-setup)
 - [Configuration File](#configuration-file)
+  - [File Path Resolution](#file-path-resolution)
+  - [Runtime Values](#runtime-values)
+  - [Validation & Write-Back](#validation--write-back)
 - [ConfigManager API](#configmanager-api)
 - [Environment Variable Interpolation](#environment-variable-interpolation)
 - [File Formats](#file-formats)
@@ -59,10 +62,10 @@ const dbHost = config.get('database.host'); // 'localhost'
 ```
 
 `loadConfig` will:
-1. Resolve the config file path (see [File Path Resolution](#configmanager-api))
+1. Resolve the config file path (see [File Path Resolution](#file-path-resolution))
 2. Create the file with schema defaults if it does not exist
 3. Parse the file (YAML or JSON)
-4. Validate and migrate the data against the schema (filling in any new defaults)
+4. Validate and migrate the data against the schema (filling in any new defaults and writing the result back to disk when `writeBack` is `true`)
 5. Substitute `${ENV_VAR}` tokens with environment variable values
 6. Return a `ConfigManager` instance
 
@@ -151,6 +154,62 @@ const config = loadConfig({
 });
 
 config.get('appVersion'); // 'dev'
+```
+
+### Validation & Write-Back
+
+By default, `loadConfig` writes the validated config back to disk whenever Zod fills in missing defaults (e.g. when a new field is added to the schema). Two options control this behavior.
+
+#### `writeBack`
+
+Set `writeBack: false` to prevent any write-back to disk during loading or `reload()`. Validation still runs and the fully-defaulted config is returned in memory, but the on-disk file is never touched.
+
+This is the recommended setting for environments where the config file is externally managed, such as a Docker bind-mount or a read-only secrets volume.
+
+```ts
+const config = loadConfig({
+  appName: 'my-app',
+  schema: AppConfigSchema,
+  writeBack: false,
+});
+```
+
+When `writeBack: false` and the config file contains an invalid value that Zod cannot accept, `loadConfig` throws a `ZodError` instead of silently recovering. Handle this explicitly if your application needs graceful degradation:
+
+```ts
+import { ZodError } from 'zod';
+
+try {
+  const config = loadConfig({ appName: 'my-app', schema: AppConfigSchema, writeBack: false });
+} catch (err) {
+  if (err instanceof ZodError) {
+    console.error('Config is invalid — check your config file and restart.', err.issues);
+    process.exit(1);
+  }
+  throw err;
+}
+```
+
+#### `onCorruptConfig`
+
+Controls what happens when validation fails and `writeBack` is `true` (the default). Accepts `'recover'` (default) or `'backup-and-reset'`.
+
+| Value | Behavior |
+|---|---|
+| `'recover'` | Attempts to deep-merge the user's data over schema defaults to salvage valid fields, then writes the result. Falls back to pure schema defaults if the merge still fails validation. |
+| `'backup-and-reset'` | Copies the corrupt file to `<configPath>.corrupt`, then writes fresh schema defaults in its place. |
+
+`'backup-and-reset'` is useful when you want the application to self-heal on startup while preserving the user's corrupt config for inspection or manual recovery. If a `.corrupt` file already exists it is overwritten with the latest corrupt version.
+
+```ts
+const config = loadConfig({
+  appName: 'my-app',
+  schema: AppConfigSchema,
+  onCorruptConfig: 'backup-and-reset',
+});
+// If config.yaml fails validation:
+//   config.yaml.corrupt → the bad file, preserved for the user
+//   config.yaml         → reset to schema defaults
 ```
 
 ---

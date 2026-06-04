@@ -1,5 +1,6 @@
 import isEqual from 'lodash/isEqual.js';
 import merge from 'lodash/merge.js';
+import { copyFileSync } from 'node:fs';
 import type { ZodIssue, ZodTypeAny } from 'zod';
 import { writeConfigFile } from './format.js';
 
@@ -14,7 +15,9 @@ export function formatZodErrors(issues: ZodIssue[]): string {
 export function validateAndMigrate(
   data: Record<string, unknown>,
   schema: ZodTypeAny,
-  filePath: string
+  filePath: string,
+  writeBack = true,
+  onCorruptConfig: 'recover' | 'backup-and-reset' = 'recover'
 ): Record<string, unknown> {
   const defaults = schema.parse({}) as Record<string, unknown>;
 
@@ -33,10 +36,20 @@ export function validateAndMigrate(
   if (!result.success) {
     console.error(formatZodErrors(result.error.issues));
 
-    // Attempt recovery: deep-merge defaults on top of data (defaults win for type conflicts)
+    if (!writeBack) {
+      throw result.error;
+    }
+
+    if (onCorruptConfig === 'backup-and-reset') {
+      copyFileSync(filePath, `${filePath}.corrupt`);
+      writeConfigFile(filePath, defaults);
+      return defaults;
+    }
+
+    // 'recover' — deep-merge user values over defaults so user values win for valid fields
     let recovered: Record<string, unknown>;
     try {
-      const merged = merge({}, working, defaults) as Record<string, unknown>;
+      const merged = merge({}, defaults, working) as Record<string, unknown>;
       recovered = schema.parse(merged) as Record<string, unknown>;
     } catch {
       // If merge still can't produce a valid result, fall back to pure defaults
@@ -51,7 +64,7 @@ export function validateAndMigrate(
   // Write back if the validated output differs from the original on-disk data — this catches:
   // - top-level keys that were missing and filled from defaults
   // - nested Zod-injected defaults for new fields inside existing objects
-  if (!isEqual(data, validated)) {
+  if (writeBack && !isEqual(data, validated)) {
     writeConfigFile(filePath, validated);
   }
 

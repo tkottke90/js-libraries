@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -125,12 +125,81 @@ describe('validateAndMigrate', () => {
     const writeSpy = vi.spyOn(formatModule, 'writeConfigFile').mockImplementation(() => undefined);
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    // Port should be a number — providing a string to trigger failure
-    const data = { server: { host: 'localhost', port: 'not-a-number' }, logging: { level: 'info' } };
+    // port: 'not-a-number' makes both the initial parse AND the recovery merge fail.
+    // When merge({}, defaults, working) still yields an invalid port, schema.parse rejects,
+    // and the function falls back to pure defaults.
+    const data = { server: { host: 'myhost', port: 'not-a-number' }, logging: { level: 'warn' } };
     const result = validateAndMigrate(data as unknown as Record<string, unknown>, TestSchema, filePath);
 
-    expect(result.server).toBeDefined();
+    expect((result.server as Record<string, unknown>)['port']).toBe(3000);
     expect(writeSpy).toHaveBeenCalled();
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Config Errors:'));
+  });
+
+  it('writeBack: false — does not write file even when defaults would expand the config', () => {
+    const filePath = join(TMP, 'config.yaml');
+    const writeSpy = vi.spyOn(formatModule, 'writeConfigFile').mockImplementation(() => undefined);
+
+    const data = { server: { host: 'localhost', port: 3000 } }; // missing logging
+    const result = validateAndMigrate(data, TestSchema, filePath, false);
+
+    expect(result).toHaveProperty('logging');
+    expect(writeSpy).not.toHaveBeenCalled();
+  });
+
+  it('writeBack: false — throws ZodError on invalid field instead of recovering', () => {
+    const filePath = join(TMP, 'config.yaml');
+    const writeSpy = vi.spyOn(formatModule, 'writeConfigFile').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const data = { server: { host: 'localhost', port: 'not-a-number' }, logging: { level: 'info' } };
+    expect(() =>
+      validateAndMigrate(data as unknown as Record<string, unknown>, TestSchema, filePath, false)
+    ).toThrow();
+    expect(writeSpy).not.toHaveBeenCalled();
+  });
+
+  it('onCorruptConfig: backup-and-reset — creates .corrupt file and writes fresh defaults to disk', () => {
+    const filePath = join(TMP, 'config.yaml');
+    const corruptPath = `${filePath}.corrupt`;
+    const originalContent = 'server:\n  host: myhost\n  port: not-a-number\n';
+    writeFileSync(filePath, originalContent);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const data = { server: { host: 'myhost', port: 'not-a-number' }, logging: { level: 'info' } };
+    const result = validateAndMigrate(
+      data as unknown as Record<string, unknown>,
+      TestSchema,
+      filePath,
+      true,
+      'backup-and-reset'
+    );
+
+    // .corrupt file must exist and contain the original corrupt content
+    expect(existsSync(corruptPath)).toBe(true);
+    expect(readFileSync(corruptPath, 'utf8')).toBe(originalContent);
+    // Config file is reset to schema defaults
+    expect((result.server as Record<string, unknown>)['port']).toBe(3000);
+    expect((result.server as Record<string, unknown>)['host']).toBe('localhost');
+  });
+
+  it('onCorruptConfig: backup-and-reset — overwrites an existing .corrupt file with the latest corrupt content', () => {
+    const filePath = join(TMP, 'config.yaml');
+    const corruptPath = `${filePath}.corrupt`;
+    const latestCorruptContent = 'server:\n  host: myhost\n  port: not-a-number\n';
+    writeFileSync(filePath, latestCorruptContent);
+    writeFileSync(corruptPath, 'old corrupt contents');
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const data = { server: { host: 'myhost', port: 'not-a-number' }, logging: { level: 'info' } };
+    validateAndMigrate(
+      data as unknown as Record<string, unknown>,
+      TestSchema,
+      filePath,
+      true,
+      'backup-and-reset'
+    );
+
+    expect(readFileSync(corruptPath, 'utf8')).toBe(latestCorruptContent);
   });
 });

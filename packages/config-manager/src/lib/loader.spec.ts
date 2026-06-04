@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+import * as formatModule from './format.js';
 import { loadConfig } from './loader.js';
 
 const TMP = join(tmpdir(), 'config-manager-loader-tests');
@@ -114,5 +115,38 @@ describe('loadConfig', () => {
 
     const manager = loadConfig({ appName: 'test', schema: TestSchema, configDir });
     expect(manager.get('server.host')).toBe('myhost.example.com');
+  });
+
+  it('writeBack: false — does not write config file when defaults expand a minimal config', () => {
+    const configDir = join(TMP, 'writeback-false', 'config.yaml');
+    // Create the file with a minimal config (missing logging section)
+    mkdirSync(join(TMP, 'writeback-false'), { recursive: true });
+    formatModule.writeConfigFile(configDir, { server: { host: 'localhost', port: 3000 } });
+
+    const writeSpy = vi.spyOn(formatModule, 'writeConfigFile');
+    writeSpy.mockClear(); // clear the call from the setup above
+
+    loadConfig({ appName: 'test', schema: TestSchema, configDir, writeBack: false });
+
+    expect(writeSpy).not.toHaveBeenCalled();
+  });
+
+  it('onCorruptConfig: backup-and-reset — creates .corrupt file and resets on invalid config', async () => {
+    const configDir = join(TMP, 'corrupt-reset', 'config.yaml');
+    mkdirSync(join(TMP, 'corrupt-reset'), { recursive: true });
+    formatModule.writeConfigFile(configDir, { server: { host: 'myhost', port: 'not-a-number' } } as unknown as Record<string, unknown>);
+
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const manager = loadConfig({
+      appName: 'test',
+      schema: TestSchema,
+      configDir,
+      onCorruptConfig: 'backup-and-reset',
+    });
+
+    expect(existsSync(`${configDir}.corrupt`)).toBe(true);
+    // Config is reset to schema defaults
+    expect(manager.get('server.port')).toBe('3000');
   });
 });

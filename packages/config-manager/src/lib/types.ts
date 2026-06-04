@@ -19,6 +19,22 @@ export interface LoadConfigOptions {
    * These are NOT written to the config file.
    */
   runtimeValues?: Record<string, unknown>;
+
+  /**
+   * Whether validateAndMigrate is allowed to write the normalized config back to disk.
+   * Pass false to prevent any startup write-back (e.g. Docker bind-mount scenarios).
+   * Defaults to true for backwards compatibility.
+   */
+  writeBack?: boolean;
+
+  /**
+   * Controls recovery behaviour when config validation fails and writeBack is true.
+   *
+   * - 'recover'           Merge defaults over the bad data and write the result (default).
+   * - 'backup-and-reset'  Copy the corrupt file to <configPath>.corrupt, then write fresh
+   *                       defaults. Lets the end-user inspect or restore the backup.
+   */
+  onCorruptConfig?: 'recover' | 'backup-and-reset';
 }
 
 export interface ConfigManager {
