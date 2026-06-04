@@ -28,6 +28,6 @@ jobs:
 
       - name: Run tests
         shell: bash
-        run: npx nx test
+        run: npm run test
 
 

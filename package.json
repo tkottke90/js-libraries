@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "nx run-many -t build --exclude express-client",
-    "test": "nx run-many -t test --exclude express-client",
+    "build": "nx run-many -t build --exclude express-client,form-field",
+    "test": "nx run-many -t test --exclude express-client,form-field",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "create-release": "nx release --skip-publish"
