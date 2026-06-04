@@ -1,0 +1,90 @@
+name: Docker Build and Deploy
+on:
+  workflow_call:
+    inputs:
+      image-tag:
+        description: Full image reference including tag (for example, finance:1.2.3)
+        required: true
+        type: string
+      deploy:
+        description: Whether to push the image to the registry
+        default: false
+        required: false
+        type: boolean
+      skip-latest:
+        description: Whether to skip creating and pushing the latest tag
+        default: false
+        required: false
+        type: boolean
+    secrets:
+      registry-username:
+        description: Docker registry username (required when deploy is true)
+        required: false
+      registry-api-key:
+        description: Docker registry API key (required when deploy is true)
+        required: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.0.0
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ${{ inputs.image-tag }}
+
+      - name: Derive image references
+        if: ${{ inputs.deploy }}
+        id: image-refs
+        shell: bash
+        run: |
+          image="${{ inputs.image-tag }}"
+
+          if [[ "$image" != *:* ]]; then
+            echo "The image-tag input must include a tag, for example finance:1.2.3" >&2
+            exit 1
+          fi
+
+          image_name="${image%:*}"
+
+          echo "versioned-image=$image" >> "$GITHUB_OUTPUT"
+          echo "latest-image=${image_name}:latest" >> "$GITHUB_OUTPUT"
+          echo "registry-versioned-image=docker.artifacts.tdkottke.com/$image" >> "$GITHUB_OUTPUT"
+          echo "registry-latest-image=docker.artifacts.tdkottke.com/${image_name}:latest" >> "$GITHUB_OUTPUT"
+
+      - name: Tag versioned image for registry
+        if: ${{ inputs.deploy }}
+        shell: bash
+        run: |
+          docker tag ${{ steps.image-refs.outputs.versioned-image }} ${{ steps.image-refs.outputs.registry-versioned-image }}
+
+      - name: Tag latest image for registry
+        if: ${{ inputs.deploy && !inputs.skip-latest }}
+        shell: bash
+        run: |
+          docker tag ${{ steps.image-refs.outputs.versioned-image }} ${{ steps.image-refs.outputs.registry-latest-image }}
+
+      - name: Push versioned tag
+        if: ${{ inputs.deploy }}
+        uses: tkottke90/js-libraries/actions/deploy-to-local-docker@main
+        with:
+          username: ${{ secrets.registry-username }}
+          api-key: ${{ secrets.registry-api-key }}
+          image: ${{ steps.image-refs.outputs.versioned-image }}
+
+      - name: Push latest tag
+        if: ${{ inputs.deploy && !inputs.skip-latest }}
+        uses: tkottke90/js-libraries/actions/deploy-to-local-docker@main
+        with:
+          username: ${{ secrets.registry-username }}
+          api-key: ${{ secrets.registry-api-key }}
+          image: ${{ steps.image-refs.outputs.latest-image }}
