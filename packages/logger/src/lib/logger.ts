@@ -69,8 +69,17 @@ export function configureFromSchema(
     transports,
   });
 
+  // Capture Winston's native `.child` before overriding it below, so
+  // `createChildLogger` can reach it instead of recursing into the override.
+  const nativeChild = LoggerInstance.child.bind(LoggerInstance);
+
   LoggerInstance.child = (options: object) => {
-    return createChildLogger((options as Record<string, string>)['name'] || 'logger', LoggerInstance);
+    const name = (options as Record<string, string>)['name'] || 'logger';
+    const parentName = loggerNames.get(LoggerInstance);
+    const childName = parentName ? `${parentName}.${name}` : name;
+    const child = nativeChild({ name: childName });
+    loggerNames.set(child, childName);
+    return child;
   }
 
   return LoggerInstance;

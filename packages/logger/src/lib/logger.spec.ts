@@ -392,6 +392,43 @@ describe('Logger Module', () => {
       const result = configureFromSchema('test-app', {});
       expect(result.levels).toEqual(customLevels);
     });
+
+    describe('child logger hierarchy', () => {
+      it('should not throw a RangeError when calling .child() on the returned logger', () => {
+        const result = configureFromSchema('test-app', { console: { enabled: true } });
+        expect(() => result.child({ name: 'child' })).not.toThrow();
+      });
+
+      it('should not throw a RangeError when calling createChildLogger() on the returned logger', () => {
+        const result = configureFromSchema('test-app', { console: { enabled: true } });
+        expect(() => createChildLogger('child', result)).not.toThrow();
+      });
+
+      it('should return a usable logger instance from .child()', () => {
+        const result = configureFromSchema('test-app', {});
+        const child = result.child({ name: 'child' });
+        expect(typeof child.info).toBe('function');
+      });
+
+      it('should tag the child logger with the name via .child()', () => {
+        const result = configureFromSchema('test-app', {});
+        const child = result.child({ name: 'db' }) as unknown as { defaultMeta: { name: string } };
+        expect(child.defaultMeta.name).toBe('db');
+      });
+
+      it('should tag the child logger with the name via createChildLogger() on the configured root', () => {
+        const result = configureFromSchema('test-app', {});
+        const child = createChildLogger('db', result) as unknown as { defaultMeta: { name: string } };
+        expect(child.defaultMeta.name).toBe('db');
+      });
+
+      it('should build a multi-level hierarchical name from the configured root', () => {
+        const result = configureFromSchema('test-app', {});
+        const dbLogger = createChildLogger('db', result);
+        const queryLogger = createChildLogger('query', dbLogger) as unknown as { defaultMeta: { name: string } };
+        expect(queryLogger.defaultMeta.name).toBe('db.query');
+      });
+    });
   });
 });
 
