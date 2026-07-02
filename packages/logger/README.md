@@ -122,16 +122,53 @@ A `ZodError` is thrown if the config is invalid (including when `grafana` is pro
 
 ### Create a child logger
 
-Child loggers inherit the parent's transports and append to the name hierarchy:
+`configureFromSchema()` seeds the root logger's `location` with `appName`, so `logger` above already logs as `[my-app]`. Child loggers extend that dotted `location` and inherit the parent's transports:
 
 ```ts
 import { createChildLogger } from '@tkottke90/logger';
 
-const appLogger = createChildLogger('app', logger);          // name: 'app'
-const dbLogger = createChildLogger('db', appLogger);         // name: 'app.db'
+const dbLogger = createChildLogger('db', logger);            // location: 'my-app.db'
+const queryLogger = createChildLogger('query', dbLogger);    // location: 'my-app.db.query'
 
-dbLogger.info('Connected to database');
+queryLogger.info('Connected to database');
+// [INFO] [my-app.db.query] Connected to database
 ```
+
+Every logger this library returns also carries a `createChildLogger()` instance method, so you can build the hierarchy fluently instead:
+
+```ts
+const dbLogger = logger.createChildLogger('db');
+const queryLogger = dbLogger.createChildLogger('query');
+```
+
+#### Attaching request-scoped metadata
+
+`createChildLogger()` accepts an optional metadata object as its third argument (second argument on the instance method). Fields in it are merged into every log message the child — and any of its descendants — emits, so you don't have to repeat them on every call. This is useful for tagging all logs from a single request with a `reqId`/`user` without touching the call sites:
+
+```ts
+// Express-style middleware
+function httpLogger(req, res, next) {
+  const route = [req.method.toLowerCase(), req.path.replace(/\//g, '-')].join('-');
+
+  req.logger = logger.createChildLogger(route, {
+    user: req.user?.email,
+    reqId: crypto.randomUUID(),
+  });
+
+  req.logger.info(`${req.method} ${req.path}`);
+  // [INFO] [my-app.get-posts] GET /posts { "user": "user@example.com", "reqId": "…" }
+
+  next();
+}
+
+app.get('/posts', (req, res) => {
+  req.logger.debug('Loading posts');
+  // [DEBUG] [my-app.get-posts] Loading posts { "user": "user@example.com", "reqId": "…" }
+  res.json(posts);
+});
+```
+
+Metadata composes down the hierarchy: a grandchild created without its own metadata still carries whatever its ancestors set, and a more specific `location`/field always wins over a less specific ancestor's value for the same key.
 
 ### Update log level at runtime
 

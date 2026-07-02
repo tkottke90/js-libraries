@@ -74,21 +74,14 @@ describe('CONSOLE_FORMAT', () => {
     expect(output).toMatch(/\d{4}-\d{2}-\d{2}/);
   });
 
-  it('should include "[api]" as the default location prefix', () => {
-    const output = formatLog({ level: 'info', message: 'location test' });
+  it('should render the location field directly as the bracketed prefix', () => {
+    const output = formatLog({ level: 'info', message: 'with location', location: 'api' });
     expect(output).toContain('[api]');
   });
 
-  it('should append location to prefix when provided', () => {
-    const output = formatLog({ level: 'info', message: 'with location', location: 'users' });
+  it('should render a hierarchical location as-is', () => {
+    const output = formatLog({ level: 'info', message: 'with location', location: 'api.users' });
     expect(output).toContain('[api.users]');
-  });
-
-  it('should not include the default "[api]" prefix without a dot when location is given', () => {
-    const output = formatLog({ level: 'info', message: 'with location', location: 'orders' });
-    // Should be [api.orders] not just [api]
-    expect(output).not.toMatch(/\[api\][^.].*\[/);
-    expect(output).toContain('[api.orders]');
   });
 
   it('should omit the meta JSON when no extra fields are present', () => {

@@ -2,11 +2,39 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import winston, { Logger } from 'winston';
 import LokiTransport from 'winston-loki';
+import Transport from 'winston-transport';
 import { ZodError } from 'zod';
 import { customLevels } from './constants.js';
 import { InvalidGrafanaConfig } from './errors.js';
 import { configureFromSchema, createChildLogger, updateLogLevel } from './logger.js';
 import { addGrafanaLokiLogger } from './transports/grafana-loki.js';
+
+// ---------------------------------------------------------------------------
+// Helper: capture the raw `info` object Winston hands to a transport.
+//
+// Winston's `.child(meta)` does NOT set a `defaultMeta` property on the
+// returned logger — it wraps `.write()` to merge `meta` into the info object
+// at log time (see Logger.prototype.child). So the only reliable way to
+// observe what a child logger's location/metadata actually resolve to is to
+// emit a real log message and inspect what a transport receives.
+// ---------------------------------------------------------------------------
+class CapturingTransport extends Transport {
+  captured: any[] = [];
+  override log(info: any, callback: () => void) {
+    this.captured.push(info);
+    callback();
+  }
+}
+
+function createCapturingLogger() {
+  const capture = new CapturingTransport();
+  const logger = winston.createLogger({
+    levels: customLevels,
+    level: 'debug',
+    transports: [capture],
+  });
+  return { logger, capture };
+}
 
 describe('Logger Module', () => {
   let testLogger: Logger;
@@ -32,32 +60,61 @@ describe('Logger Module', () => {
       expect(typeof childLogger.debug).toBe('function');
     });
 
-    it('should call logger.child() with the provided name', () => {
+    it('should call logger.child() with the provided name as location', () => {
       const spy = vi.spyOn(testLogger, 'child');
       createChildLogger('myservice', testLogger);
-      expect(spy).toHaveBeenCalledWith({ name: 'myservice' });
+      expect(spy).toHaveBeenCalledWith({ location: 'myservice' });
     });
 
-    it('should build exact hierarchical name "parent.child" when parent has a name', () => {
+    it('should merge additional metadata alongside location', () => {
+      const spy = vi.spyOn(testLogger, 'child');
+      createChildLogger('myservice', testLogger, { user: 'a@b.com', reqId: '123' });
+      expect(spy).toHaveBeenCalledWith({ location: 'myservice', user: 'a@b.com', reqId: '123' });
+    });
+
+    it('should ignore null metadata', () => {
+      const spy = vi.spyOn(testLogger, 'child');
+      createChildLogger('myservice', testLogger, null);
+      expect(spy).toHaveBeenCalledWith({ location: 'myservice' });
+    });
+
+    it('should build exact hierarchical location "parent.child" when parent has a location', () => {
       const parentWithName = createChildLogger('parent', testLogger);
       const spy = vi.spyOn(parentWithName, 'child');
       createChildLogger('child', parentWithName);
-      expect(spy).toHaveBeenCalledWith({ name: 'parent.child' });
+      expect(spy).toHaveBeenCalledWith({ location: 'parent.child' });
     });
 
-    it('should build a three-level hierarchical name', () => {
+    it('should build a three-level hierarchical location', () => {
       const level1 = createChildLogger('app', testLogger);
       const level2 = createChildLogger('database', level1);
       const spy = vi.spyOn(level2, 'child');
       createChildLogger('query', level2);
-      expect(spy).toHaveBeenCalledWith({ name: 'app.database.query' });
+      expect(spy).toHaveBeenCalledWith({ location: 'app.database.query' });
     });
 
     it('should work with any provided logger instance', () => {
       const customLogger = winston.createLogger();
       const spy = vi.spyOn(customLogger, 'child');
       createChildLogger('custom', customLogger);
-      expect(spy).toHaveBeenCalledWith({ name: 'custom' });
+      expect(spy).toHaveBeenCalledWith({ location: 'custom' });
+    });
+
+    it('should attach a working createChildLogger() instance method to the returned logger', () => {
+      const { logger, capture } = createCapturingLogger();
+      const parent = createChildLogger('parent', logger);
+      const grandchild = parent.createChildLogger('child');
+      grandchild.info('hello');
+      expect(capture.captured[0].location).toBe('parent.child');
+    });
+
+    it('should merge metadata passed through the instance method', () => {
+      const { logger, capture } = createCapturingLogger();
+      const parent = createChildLogger('parent', logger);
+      const grandchild = parent.createChildLogger('child', { reqId: 'abc' });
+      grandchild.info('hello');
+      expect(capture.captured[0].location).toBe('parent.child');
+      expect(capture.captured[0].reqId).toBe('abc');
     });
   });
 
@@ -391,6 +448,74 @@ describe('Logger Module', () => {
     it('should register customLevels on the returned logger', () => {
       const result = configureFromSchema('test-app', {});
       expect(result.levels).toEqual(customLevels);
+    });
+
+    describe('child logger hierarchy', () => {
+      it('should seed the root logger location with appName', () => {
+        const spy = vi.spyOn(winston.Logger.prototype, 'child');
+        configureFromSchema('my-app', {});
+        expect(spy).toHaveBeenCalledWith({ location: 'my-app' });
+      });
+
+      it('should not throw when calling createChildLogger() on the returned logger', () => {
+        const result = configureFromSchema('test-app', { console: { enabled: true } });
+        expect(() => createChildLogger('child', result)).not.toThrow();
+      });
+
+      it('should not throw when calling the createChildLogger() instance method', () => {
+        const result = configureFromSchema('test-app', { console: { enabled: true } });
+        expect(() => result.createChildLogger('child')).not.toThrow();
+      });
+
+      it('should build a hierarchical location via createChildLogger()', () => {
+        const result = configureFromSchema('app', {});
+        const spy = vi.spyOn(result, 'child');
+        createChildLogger('db', result);
+        expect(spy).toHaveBeenCalledWith({ location: 'app.db' });
+      });
+
+      it('should build a hierarchical location via the instance method', () => {
+        const result = configureFromSchema('app', {});
+        const spy = vi.spyOn(result, 'child');
+        result.createChildLogger('db');
+        expect(spy).toHaveBeenCalledWith({ location: 'app.db' });
+      });
+
+      it('should build a multi-level hierarchical location', () => {
+        const result = configureFromSchema('app', {});
+        const dbLogger = result.createChildLogger('db');
+        const spy = vi.spyOn(dbLogger, 'child');
+        dbLogger.createChildLogger('query');
+        expect(spy).toHaveBeenCalledWith({ location: 'app.db.query' });
+      });
+
+      it('should merge metadata into the child() call alongside the location', () => {
+        const result = configureFromSchema('api', {});
+        const spy = vi.spyOn(result, 'child');
+        result.createChildLogger('get-posts', { user: 'a@b.com', reqId: '123' });
+        expect(spy).toHaveBeenCalledWith({ location: 'api.get-posts', user: 'a@b.com', reqId: '123' });
+      });
+
+      it('should allow createChildLogger with null metadata', () => {
+        const result = configureFromSchema('app', {});
+        expect(() => result.createChildLogger('child', null)).not.toThrow();
+      });
+
+      it('should actually emit the composed location and metadata on log output', () => {
+        // End-to-end check (independent of the .child() call-arg spies above):
+        // build a hierarchy purely through the public API and confirm what a
+        // transport actually receives, exercising the real Winston merge chain.
+        const { logger, capture } = createCapturingLogger();
+        const root = createChildLogger('api', logger);
+        const reqLogger = root.createChildLogger('get-posts', { reqId: '123', user: 'a@b.com' });
+        const dbLogger = reqLogger.createChildLogger('db-query');
+        dbLogger.debug('query executed');
+
+        const [entry] = capture.captured;
+        expect(entry.location).toBe('api.get-posts.db-query');
+        expect(entry.reqId).toBe('123');
+        expect(entry.user).toBe('a@b.com');
+      });
     });
   });
 });
