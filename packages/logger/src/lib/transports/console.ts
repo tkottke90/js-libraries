@@ -13,15 +13,9 @@ export const CONSOLE_FORMAT = winston.format.combine(
   winston.format.printf(({ timestamp, level, message, location, ...meta }) => {
     // Create a string representation of the meta information if it exists
     const metaString = Object.keys(meta).length ? JSON.stringify(meta) : '';
-    
-    let localStr = `api`;
-
-    if (location) {
-      localStr += `.${location}`;
-    }
 
     // Format the log message with timestamp, level, location, message, and meta information
-    return `${timestamp} [${level.toUpperCase()}] [${localStr}] ${message} ${metaString}`;
+    return `${timestamp} [${level.toUpperCase()}] [${location}] ${message} ${metaString}`;
   })
 );
 
