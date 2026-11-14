@@ -17,29 +17,16 @@
       "default": "./dist/index.js"
     }
   },
-  "nx": {
-    "targets": {
-      "build": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{options.outputPath}"
-        ],
-        "options": {
-          "outputPath": "packages/config-manager/dist",
-          "main": "packages/config-manager/src/index.ts",
-          "tsConfig": "packages/config-manager/tsconfig.lib.json",
-          "format": [
-            "esm"
-          ],
-          "declarationRootDir": "packages/config-manager/src"
-        }
-      }
-    }
-  },
   "dependencies": {
     "vitest": "*",
     "zod": "*",
     "lodash": "*",
     "yaml": "*"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc --build tsconfig.lib.json && esbuild --bundle src/index.ts --outdir=dist --format=esm --platform=node --target=es2022 --packages=external",
+    "test": "vitest run",
+    "lint": "eslint ."
   }
 }

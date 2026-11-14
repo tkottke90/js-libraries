@@ -18,26 +18,13 @@
       "default": "./dist/index.js"
     }
   },
-  "nx": {
-    "targets": {
-      "build": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{options.outputPath}"
-        ],
-        "options": {
-          "outputPath": "packages/js-errors/dist",
-          "main": "packages/js-errors/src/index.ts",
-          "tsConfig": "packages/js-errors/tsconfig.lib.json",
-          "format": [
-            "esm"
-          ],
-          "declarationRootDir": "packages/js-errors/src"
-        }
-      }
-    }
-  },
   "dependencies": {
     "vitest": "^4.0.0"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc --build tsconfig.lib.json && esbuild --bundle src/index.ts --outdir=dist --format=esm --platform=node --target=es2022 --packages=external",
+    "test": "vitest run",
+    "lint": "eslint ."
   }
 }

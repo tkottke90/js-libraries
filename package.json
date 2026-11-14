@@ -3,8 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "nx run-many -t build --exclude express-client,form-field",
-    "test": "nx run-many -t test --exclude express-client,form-field",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "create-release": "nx release --skip-publish"
@@ -12,11 +13,6 @@
   "private": true,
   "devDependencies": {
     "@eslint/js": "^9.8.0",
-    "@nx/esbuild": "22.2.6",
-    "@nx/eslint": "22.2.6",
-    "@nx/eslint-plugin": "22.2.6",
-    "@nx/js": "22.2.6",
-    "@nx/vitest": "22.2.6",
     "@swc-node/register": "~1.9.1",
     "@swc/core": "^1.15.8",
     "@swc/helpers": "~0.5.11",
@@ -31,7 +27,6 @@
     "express": "^5.2.1",
     "jsdom": "^27.3.0",
     "jsonc-eslint-parser": "^2.1.0",
-    "nx": "22.2.6",
     "prettier": "^2.6.2",
     "tslib": "^2.3.0",
     "typescript": "~5.9.2",
@@ -50,5 +45,18 @@
     "winston": "^3.19.0",
     "winston-loki": "^6.1.3",
     "yaml": "^2.7.1"
-  }
+  },
+  "description": "<a alt=\"Nx logo\" href=\"https://nx.dev\" target=\"_blank\" rel=\"noreferrer\"><img src=\"https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png\" width=\"45\"></a>",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tkottke90/js-libraries.git"
+  },
+  "keywords": [],
+  "author": "",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tkottke90/js-libraries/issues"
+  },
+  "homepage": "https://github.com/tkottke90/js-libraries#readme"
 }

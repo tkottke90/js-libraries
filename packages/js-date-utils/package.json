@@ -18,58 +18,13 @@
       "default": "./dist/index.js"
     }
   },
-  "nx": {
-    "targets": {
-      "build": {
-        "executor": "nx:run-commands",
-        "outputs": [
-          "{workspaceRoot}/packages/js-date-utils/dist"
-        ],
-        "options": {
-          "commands": [
-            "nx run js-date-utils:build-esm",
-            "nx run js-date-utils:build-cjs"
-          ],
-          "parallel": false
-        }
-      },
-      "build-esm": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{workspaceRoot}/packages/js-date-utils/dist"
-        ],
-        "options": {
-          "outputPath": "packages/js-date-utils/dist",
-          "main": "packages/js-date-utils/src/index.ts",
-          "tsConfig": "packages/js-date-utils/tsconfig.lib.json",
-          "format": [
-            "esm"
-          ],
-          "outputFileName": "index.js",
-          "declarationRootDir": "packages/js-date-utils/src",
-          "deleteOutputPath": true
-        }
-      },
-      "build-cjs": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{workspaceRoot}/packages/js-date-utils/dist"
-        ],
-        "options": {
-          "outputPath": "packages/js-date-utils/dist",
-          "main": "packages/js-date-utils/src/index.ts",
-          "tsConfig": "packages/js-date-utils/tsconfig.lib.json",
-          "format": [
-            "cjs"
-          ],
-          "outputFileName": "index.cjs",
-          "generatePackageJson": false,
-          "deleteOutputPath": false
-        }
-      }
-    }
-  },
   "dependencies": {
     "vitest": "*"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc --build tsconfig.lib.json && esbuild --bundle src/index.ts --outfile=dist/index.js --format=esm --platform=node --target=es2022 --packages=external && esbuild --bundle src/index.ts --outfile=dist/index.cjs --format=cjs --platform=node --target=es2022 --packages=external",
+    "test": "vitest run",
+    "lint": "eslint ."
   }
 }

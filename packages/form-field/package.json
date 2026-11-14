@@ -15,28 +15,14 @@
       "default": "./dist/index.js"
     }
   },
-  "nx": {
-    "targets": {
-      "build": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{options.outputPath}"
-        ],
-        "options": {
-          "outputPath": "packages/form-field/dist",
-          "main": "packages/form-field/src/index.ts",
-          "tsConfig": "packages/form-field/tsconfig.lib.json",
-          "format": [
-            "esm"
-          ],
-          "declarationRootDir": "packages/form-field/src"
-        }
-      }
-    }
-  },
   "dependencies": {
     "@preact/signals": "*",
     "preact": "*",
     "vitest": "*"
+  },
+  "scripts": {
+    "build": "tsc --build tsconfig.lib.json && esbuild --bundle src/index.ts --outdir=dist --format=esm --platform=node --target=es2022 --packages=external --jsx=automatic --jsx-import-source=preact",
+    "test": "vitest run",
+    "lint": "eslint ."
   }
 }

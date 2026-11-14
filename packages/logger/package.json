@@ -17,30 +17,17 @@
       "default": "./dist/index.js"
     }
   },
-  "nx": {
-    "targets": {
-      "build": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{options.outputPath}"
-        ],
-        "options": {
-          "outputPath": "packages/logger/dist",
-          "main": "packages/logger/src/index.ts",
-          "tsConfig": "packages/logger/tsconfig.lib.json",
-          "format": [
-            "esm"
-          ],
-          "declarationRootDir": "packages/logger/src"
-        }
-      }
-    }
-  },
   "dependencies": {
     "vitest": "*",
     "winston": "*",
     "winston-loki": "*",
     "zod": "*",
     "@tkottke90/js-errors": "*"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc --build tsconfig.lib.json && esbuild --bundle src/index.ts --outdir=dist --format=esm --platform=node --target=es2022 --packages=external",
+    "test": "vitest run",
+    "lint": "eslint ."
   }
 }

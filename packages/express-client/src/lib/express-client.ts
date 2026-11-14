@@ -5,14 +5,6 @@ type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
 type FunctionSchema<T> = T extends z.ZodTypeAny ? z.infer<T> : never;
 
-type MethodArgs<
-  BodySchema extends z.ZodTypeAny | undefined,
-  QuerySchema extends z.ZodTypeAny | undefined,
-  ParamSchema extends z.ZodTypeAny | undefined
-> = (BodySchema extends z.ZodTypeAny ? { body: z.infer<BodySchema> } : object) &
-  (QuerySchema extends z.ZodTypeAny ? { query: z.infer<QuerySchema> } : object) &
-  (ParamSchema extends z.ZodTypeAny ? { params: z.infer<ParamSchema> } : object);
-
 // Extract the return type from outputProcessor and handle Promise unwrapping
 type OutputProcessorReturnType<T> = T extends (response: Response) => infer R
   ? R extends Promise<infer U>

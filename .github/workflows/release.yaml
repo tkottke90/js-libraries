@@ -83,7 +83,27 @@ jobs:
           fi
 
       - name: Validate Changes
-        run: npx nx run ${{needs.extract-package-info.outputs.package-dir}}:lint && npx nx run ${{needs.extract-package-info.outputs.package-dir}}:test && npx nx run ${{needs.extract-package-info.outputs.package-dir}}:build && npx nx run ${{needs.extract-package-info.outputs.package-dir}}:typecheck
+        run: |
+          set -euo pipefail
+
+          # Build every workspace in one go. npm executes workspaces in
+          # topological dependency order, so cross-package deps (js-errors)
+          # are built before consumers (logger, express-client). This
+          # replaces the old Nx `dependsOn: ^build` task graph.
+          npm run build --workspaces --if-present
+
+          # Validate the released package (replaces nx run <pkg>:lint/test/build/typecheck).
+          PKG="${{ needs.extract-package-info.outputs.package-dir }}"
+
+          npm run lint --workspace "$PKG"
+          npm run test --workspace "$PKG"
+          # Production-scoped typecheck (matches the old Nx @nx/js/typescript
+          # target, which checked tsconfig.lib.json and excluded specs).
+          # Spec files are covered by each package's tsconfig.spec.json,
+          # which carries the vitest/globals types they need.
+          npx tsc --noEmit --project "$PKG/tsconfig.lib.json"
+          # No per-package rebuild needed: the build-all above already
+          # produced this package's dist (and its dependencies').
 
       - name: Publish to NPM
         run: |
