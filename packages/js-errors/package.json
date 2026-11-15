@@ -18,9 +18,6 @@
       "default": "./dist/index.js"
     }
   },
-  "dependencies": {
-    "vitest": "^4.0.0"
-  },
   "private": true,
   "scripts": {
     "build": "tsc --build tsconfig.lib.json && esbuild --bundle src/index.ts --outdir=dist --format=esm --platform=node --target=es2022 --packages=external",
