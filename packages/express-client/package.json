@@ -20,7 +20,6 @@
   },
   "peerDependencies": {
     "@tkottke90/js-errors": "*",
-    "vitest": "*",
     "zod": "*"
   },
   "scripts": {
