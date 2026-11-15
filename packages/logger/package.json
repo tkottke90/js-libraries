@@ -18,7 +18,6 @@
     }
   },
   "dependencies": {
-    "vitest": "*",
     "winston": "*",
     "winston-loki": "*",
     "zod": "*",
