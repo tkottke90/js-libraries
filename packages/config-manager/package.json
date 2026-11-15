@@ -17,10 +17,6 @@
       "default": "./dist/index.js"
     }
   },
-  "dependencies": {
-    "lodash": "*",
-    "yaml": "*"
-  },
   "private": true,
   "scripts": {
     "build": "tsc --build tsconfig.lib.json && esbuild --bundle src/index.ts --outdir=dist --format=esm --platform=node --target=es2022 --packages=external",
