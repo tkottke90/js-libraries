@@ -18,7 +18,6 @@
     }
   },
   "dependencies": {
-    "vitest": "*",
     "zod": "*",
     "lodash": "*",
     "yaml": "*"
