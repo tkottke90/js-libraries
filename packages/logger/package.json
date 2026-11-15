@@ -18,8 +18,6 @@
     }
   },
   "dependencies": {
-    "winston": "*",
-    "winston-loki": "*",
     "@tkottke90/js-errors": "*"
   },
   "private": true,
