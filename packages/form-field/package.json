@@ -17,8 +17,7 @@
   },
   "dependencies": {
     "@preact/signals": "*",
-    "preact": "*",
-    "vitest": "*"
+    "preact": "*"
   },
   "scripts": {
     "build": "tsc --build tsconfig.lib.json && esbuild --bundle src/index.ts --outdir=dist --format=esm --platform=node --target=es2022 --packages=external --jsx=automatic --jsx-import-source=preact",
