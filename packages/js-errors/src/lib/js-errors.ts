@@ -57,24 +57,30 @@ export class BaseError extends Error {
    * @param error Error received from the catch block
    * @returns new BaseError instance
    */
-  static fromCatch(error: any) {
+  static fromCatch(error: unknown) {
     if (error instanceof BaseError) {
       return error;
     }
 
+    // Primitives are not supported: match the historical behavior where
+    // the 'in' operator threw a TypeError on non-object values.
+    if (typeof error !== 'object' || error === null) {
+      throw new TypeError(
+        'BaseError.fromCatch only supports object errors; primitives are not supported'
+      );
+    }
+
     // Try and extract the message from the input error
-    const message = 'message' in error ? error.message : JSON.stringify(error);
+    const message =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as { message: unknown }).message)
+        : JSON.stringify(error);
 
     // Create metadata from the error properties
-    const metadata = Array.from(Object.entries(error)).reduce(
-      (output, [key, value]) => {
-        return {
-          ...output,
-          [key]: value,
-        };
-      },
-      {}
-    );
+    const metadata =
+      typeof error === 'object' && error !== null
+        ? Object.fromEntries(Object.entries(error as Record<string, unknown>))
+        : {};
 
     return new BaseError(message, metadata);
   }

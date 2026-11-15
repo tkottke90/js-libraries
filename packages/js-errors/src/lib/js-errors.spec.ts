@@ -241,9 +241,12 @@ describe('BaseError', () => {
     });
 
     it('should handle Error objects with additional properties', () => {
-      const error = new Error('Base error');
-      (error as any).code = 'ERR_CUSTOM';
-      (error as any).context = { userId: 123 };
+      const error = new Error('Base error') as Error & {
+        code?: string;
+        context?: unknown;
+      };
+      error.code = 'ERR_CUSTOM';
+      error.context = { userId: 123 };
 
       const result = BaseError.fromCatch(error);
 
@@ -276,7 +279,7 @@ describe('BaseError', () => {
     });
 
     it('should handle errors with circular references gracefully', () => {
-      const errorObj: any = { message: 'Circular error' };
+      const errorObj: Record<string, unknown> = { message: 'Circular error' };
       errorObj.self = errorObj; // Create circular reference
 
       // Should not throw
@@ -298,7 +301,7 @@ describe('BaseError', () => {
       expect(result).toBeInstanceOf(BaseError);
       expect(result.message).toBe('Error with symbol');
       // Symbol properties are not enumerable by Object.entries
-      expect(result.metadata[sym as any]).toBeUndefined();
+      expect(sym in result.metadata).toBe(false);
     });
 
     it('should not include non-enumerable Error properties in metadata', () => {
