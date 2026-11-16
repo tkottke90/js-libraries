@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "unassignedPolicy": "Findings whose top-level puller cannot be traced to any owned dependency are reported with status 'unowned' for user triage. They are never silently dropped and never fixed by any task (spec §3).",
+  "targets": [
+    {
+      "id": "root-monitor",
+      "role": "monitor",
+      "ownedDependencies": [
+        "@preact/signals",
+        "lodash",
+        "preact",
+        "winston",
+        "winston-loki",
+        "yaml"
+      ],
+      "reportOnly": true,
+      "notes": "Report-only monitor over the six root runtime dependencies. All six are also owned for remediation by their consuming packages (config-manager: lodash, yaml; logger: winston, winston-loki; form-field: preact, @preact/signals); this mirror is intentional. Owner uniqueness (no two tasks ever open PRs for the same dependency, spec §3) is enforced across all other targets; this monitor mirror is the sole exception because it never opens branches or PRs and never edits manifests (spec §12 root-monitor runbook)."
+    },
+    {
+      "id": "config-manager",
+      "role": "package-worker",
+      "ownedDependencies": ["lodash", "yaml", "zod"],
+      "reportOnly": false,
+      "notes": "zod is declared in root devDependencies but consumed by this package — ownership is by consumership (spec §3), so this task edits the root package.json/package-lock.json for it. lodash and yaml are declared in root dependencies and mirrored report-only in root-monitor."
+    },
+    {
+      "id": "logger",
+      "role": "package-worker",
+      "ownedDependencies": ["winston", "winston-loki"],
+      "reportOnly": false,
+      "notes": "winston and winston-loki are declared in root dependencies and consumed by this package; mirrored report-only in root-monitor."
+    },
+    {
+      "id": "form-field",
+      "role": "package-worker",
+      "ownedDependencies": ["@preact/signals", "preact"],
+      "reportOnly": true,
+      "notes": "preact and @preact/signals are declared in root dependencies and consumed by this package; mirrored report-only in root-monitor. reportOnly stays true until form-field's baseline debt is cleared (spec §6: 43 failing tests of 211, 10 lint errors). Re-check condition, every run: if the verify gate (scripts/dependency-hygiene/baseline.json / verify.mjs) shows the form-field debt cleared, flip this entry to reportOnly: false via a normal commit and follow the full package-worker runbook from then on."
+    },
+    {
+      "id": "express-client",
+      "role": "package-worker",
+      "ownedDependencies": ["@types/express", "express"],
+      "reportOnly": false,
+      "notes": "express and @types/express are declared in root devDependencies but consumed by this package — ownership is by consumership (spec §3), so this task edits the root package.json/package-lock.json for them."
+    },
+    {
+      "id": "js-date-utils",
+      "role": "package-worker",
+      "ownedDependencies": [],
+      "reportOnly": false,
+      "notes": "No external dependencies. Workspace-internal @tkottke90/* links are excluded from registry updates (spec §3); their updates happen through their own packages' PRs."
+    },
+    {
+      "id": "js-errors",
+      "role": "package-worker",
+      "ownedDependencies": [],
+      "reportOnly": false,
+      "notes": "No external dependencies. Workspace-internal @tkottke90/* links are excluded from registry updates (spec §3); their updates happen through their own packages' PRs."
+    },
+    {
+      "id": "root-tooling",
+      "role": "package-worker",
+      "ownedDependencies": [
+        "@eslint/js",
+        "@swc-node/register",
+        "@swc/core",
+        "@swc/helpers",
+        "@testing-library/preact",
+        "@types/lodash",
+        "@types/node",
+        "@vitest/coverage-v8",
+        "esbuild",
+        "eslint",
+        "eslint-config-prettier",
+        "jsdom",
+        "jsonc-eslint-parser",
+        "prettier",
+        "tslib",
+        "typescript",
+        "typescript-eslint",
+        "vite",
+        "vitest"
+      ],
+      "reportOnly": false,
+      "notes": "Every root devDependency except the three package-consumed ones (zod → config-manager; express, @types/express → express-client). Derived by 'list all, subtract the three' from the root package.json; this list is definitive — refresh it via a normal commit whenever root devDependencies change."
+    }
+  ]
+}
