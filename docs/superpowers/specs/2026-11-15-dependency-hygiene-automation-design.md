@@ -49,6 +49,7 @@ one weekly orchestrator task that fans out eight sequential worker tasks.
   task runs start with no conversation memory. It must name all eight worker
   tasks, their order, the `asCohort: true` requirement, and point its run at
   this spec and `docs/dependency-ownership.json` as the runbook.
+- **Validated by spike (2026-11-15):** a throwaway orchestrator run successfully fanned out two children via `create_tasks` with `asCohort: true`, and its next fire occurred only after the cohort finished (lower bound proven). Full timeline and analysis: `docs/specs/research/2026-11-15-task-fanout-spike.md`.
 
 ## 3. Ownership map
 
