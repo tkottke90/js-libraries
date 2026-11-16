@@ -205,3 +205,117 @@ Treat week one's PRs as the shake-down run and review them closely.
   spec + ownership-file pointers included).
 - Wiki mirror: `repo-js-libraries` domain pages recording the design and the
   weekly runbook for human recall.
+
+## 12. Worker runbooks
+
+The exact instructions each weekly worker task's plan references. One-line
+contracts name the §3 scripts by path; full usage lives in each script's
+header comment, so a worker never needs the implementation plan at runtime.
+Classification (§4), the ownership map (`docs/dependency-ownership.json`),
+the verification policy (§6), and the report structure (§7) are
+authoritative here and not restated.
+
+**Standing rule — script failures are surprises, not invitations.** A §12
+script exiting non-zero outside its documented contract (`detect.mjs` exit
+1, `verify.mjs` exit 2, `dedupe.sh` non-zero, `ship.sh` refusing an unsafe
+operation) is an anomaly for the agent to investigate and report. It is
+never a license to reimplement that step with ad-hoc commands: agents
+classify, decide, and compose prose; the scripts execute the mechanics.
+
+### 12.1 Root monitor runbook (task 1 — report-only)
+
+1. **Preflight (§5.1)** — on `main`, clean tree, `git pull`.
+2. **Detect** — `node scripts/dependency-hygiene/detect.mjs --owner root-monitor`
+   (output to stdout, or `--out <path>` into a gitignored scratch directory
+   such as `.hashbrown/dh-prep/`). Contract: filters `npm audit --json` +
+   `npm outdated --json` to the owner's `ownedDependencies`, keeping
+   via-chain over-matches as raw material for agent-side transitive tracing;
+   npm's findings exits are data captured in `exitCodes`; exit 1 = real
+   failure (surprise).
+3. **Classify (agent, §4)** — apply the severity table; trace transitive
+   findings with `npm ls <pkg>`; untraceable findings get status
+   **unowned** for user triage (§3) — never fixed, never dropped.
+4. **Report** — create this week's `docs/reports/dependency-hygiene/YYYY-MM-DD.md`
+   with the monitor's section and the weekly table (§7). Findings belonging
+   to other owners are recorded in the report for their owning package, not
+   acted on. **No file edits, no branches, no PRs** — this role is
+   report-only by design (§2).
+5. **Commit the report to `main`** — direct commit (no `ship.sh`; no worker
+   branch exists).
+
+### 12.2 Package worker runbook (template — tasks 2, 3, 5, 6, 7; also §12.4)
+
+Parameters: `<pkg>` = scoped workspace name (e.g. `@tkottke90/logger`);
+`<label>` = `<pkg>` minus the `@tkottke90/` prefix (e.g. `logger`);
+`<ownerId>` = the target's id in `docs/dependency-ownership.json`.
+(js-date-utils and js-errors own no external dependencies — their runs
+normally end at step 4; the report section is still produced every week.)
+
+1. **Preflight (§5.1)** — on `main`, clean tree, `git pull`.
+2. **Dedupe (§5.2)** — `scripts/dependency-hygiene/dedupe.sh <label>`.
+   Contract: prints `open` plus matching `chore/hashbrown-<label>-*`
+   branches/PRs, or `none`; exit 0 either way — the skip decision is the
+   agent's. `open` ⇒ record "skipped — previous PR awaiting review" and
+   jump to step 10. Non-zero exit = the scan itself failed (surprise,
+   never read as `none`).
+3. **Detect (§5.3)** — `node scripts/dependency-hygiene/detect.mjs --owner <ownerId>`.
+   npm's findings exits are data (§4); script exit 1 = surprise.
+4. **Nothing to do?** Record "no changes" and jump to step 10 (§5.4).
+   Detection runs every week regardless; every target produces a report
+   section.
+5. **Compose the bump set (agent, §4)** — apply the classification table to
+   the detection output and write the bumps JSON to a gitignored scratch
+   path (e.g. `.hashbrown/dh-prep/`):
+   `{"updates":[{"name":"<dep>","version":"<semver>","manifest":"root" | "<pkg>"}]}`.
+   Use `manifest: "root"` when the owned dependency is declared in the root
+   `package.json` (consumership-owned: config-manager's `zod`/`lodash`/`yaml`,
+   express-client's `express`/`@types/express`).
+6. **Branch + apply (§5.5)** — `scripts/dependency-hygiene/ship.sh create <label> <YYYY-MM-DD>`
+   (makes + switches to `chore/hashbrown-<label>-<date>` off `main`;
+   refuses when not on `main`), then
+   `node scripts/dependency-hygiene/apply-bumps.mjs --bumps <path.json>`.
+   Contract: runs `npm install <name>@<version>` at root or
+   `--workspace=<pkg>` (scoped names only — bare directory names fail, §8);
+   verifies manifests + lockfile actually changed. Exit 1 = a bump failed —
+   report it; no hand-crafted fallback commands.
+7. **Verify (§5.6)** — `node scripts/dependency-hygiene/verify.mjs`.
+   Contract: full-monorepo gate in fixed order build → test → lint, scoped
+   workspace names, per-package counts from JSON reporters, diffed against
+   `scripts/dependency-hygiene/baseline.json`; verdict
+   `matches-baseline` | `new-failures` | `tooling-error` (exit 0/1/2).
+   `new-failures` ⇒ agent triage (§6): fix mechanical regressions
+   (versions, configs, lockfile) on the branch and re-run verify, else
+   revert the bump and report. `tooling-error` = surprise.
+8. **Ship (§5.7)** — `scripts/dependency-hygiene/ship.sh commit "chore(<pkg>): weekly dependency updates"`,
+   then `scripts/dependency-hygiene/ship.sh push`, then open the PR
+   agent-side (`gh pr create`, title `chore(<pkg>): weekly dependency updates`)
+   with: a changes table (dependency, from → to, type, severity/GHSA id),
+   audit before/after counts, and the standing form-field baseline note
+   (§5.7). PR prose is never scripted.
+9. **Cleanup (§5.8)** — `scripts/dependency-hygiene/ship.sh cleanup`
+   (back to `main`, pull, delete the local branch); on any failure path
+   after step 6, `ship.sh cleanup failed`. The repository is always left on
+   `main`, including on failure paths.
+10. **Report (§5.9)** — append the package's section and table rows to the
+    weekly report; commit to `main`.
+
+### 12.3 form-field variant (task 4 — report-only while baseline red)
+
+Identical to §12.2 through step 3 (detect). While
+`scripts/dependency-hygiene/baseline.json` records form-field's debt
+(43 failing tests of 211, 10 lint errors — §6), steps 5–9 (remediate
+through cleanup) are replaced by **report-only**: findings go into
+form-field's report section; no branch, no PR. The task never fixes
+form-field's pre-existing debt (§9 — tracked separately).
+
+**Re-check condition:** if a future run finds the baseline green — the debt
+is fixed and `baseline.json` updated by a normal commit — the form-field
+worker upgrades to the full §12.2 template from that run onward.
+
+### 12.4 Root tooling runbook (task 8 — runs last)
+
+The §12.2 template with: `<label>` = `root-tooling`, `<ownerId>` =
+`root-tooling`; branch prefix `chore/hashbrown-root-tooling-*`; owned list
+= root `devDependencies` **minus** `zod`, `express`, `@types/express`
+(those belong to config-manager / express-client by consumership, §3).
+Runs last in the cohort because its bumps affect every package's gate (§2).
