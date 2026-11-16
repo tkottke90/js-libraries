@@ -1,0 +1,11 @@
+{
+  "seededAt": "2026-11-16",
+  "comment": "Known pre-existing debt at seeding time. Changed only when the debt itself changes (e.g. form-field cleanup), via a normal commit — never by worker runs comparing against it (spec §6 baseline policy).",
+  "packages": {
+    "@tkottke90/form-field": {
+      "tests": { "total": 211, "failed": 43 },
+      "lint": { "errors": 10 }
+    }
+  },
+  "packagesNotInBaselineAreExpectedClean": true
+}
