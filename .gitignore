@@ -47,3 +47,6 @@ vitest.config.*.timestamp*
 # Documentation
 PR_DESCRIPTION.md
 .hashbrown/
+
+# local npm auth config (token via env, never commit)
+.npmrc
