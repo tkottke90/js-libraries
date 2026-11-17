@@ -45,7 +45,7 @@ jobs:
         uses: tkottke90/js-libraries/actions/setup-node-cicd@3510e914a01ba743d09ad56557104fe23829c059
         with:
           registry-url: ${{ secrets.PRIVATE_NPM_REGISTRY }}
-          node-auth-token: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
+          node-auth-token: ${{ secrets.NPM_TOKEN }}
 
       - name: Write package info to summary
         run: |
