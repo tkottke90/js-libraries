@@ -14,3 +14,14 @@ Surrogate one-shot task `304abb20-f3f2-44a4-a6b1-c1b67599872a` ("DH orchestrator
 - 780ed5c0-64da-43ae-b14c-1ce0ee352af2 | DH js-errors
 - ba5224a8-e4bb-4be0-8cdc-964059da2a59 | DH logger
 - d546e62c-6f3a-43b9-81f6-605fa6d95b34 | DH root tooling
+## 2026-11-22 — orchestrator run #1 (scheduled 2026-11-22 02:00 UTC)
+- preconditions: main clean, git pull up to date, docs/dependency-ownership.json + scripts/dependency-hygiene/ present — OK
+- cohort created via single create_tasks (asCohort): 8 children in spec-§2 order
+- 39b96750-ed06-40ca-8f9e-6cc7309581fe DH root monitor
+- 44152abf-be01-4c59-9f57-5fc6255fab28 DH config-manager
+- f77f97bd-599b-407f-b092-6005443d53f1 DH express-client
+- 07a654d1-1a1b-48a0-aac2-280cbdc03177 DH form-field
+- 88d299cb-bd5f-41f3-8a12-7680d0af9370 DH js-date-utils
+- 3a3be62d-d2fd-47b5-ae2d-6914807fa61c DH js-errors
+- e7ef367e-cb13-4e89-b5e4-91ecd5342ef3 DH logger
+- 64d73f45-e011-4654-9354-ab1d6ddb31e9 DH root tooling
